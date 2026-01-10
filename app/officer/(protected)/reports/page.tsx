@@ -50,7 +50,7 @@ import {
 } from "lucide-react";
 import { ReportForm } from "@/components/report-form";
 import Image from "next/image";
-
+import { useRouter } from "next/navigation";
 interface Evidence {
   id: string;
   fileUrl: string;
@@ -95,6 +95,7 @@ export default function ReportsManagementPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
+  const router = useRouter(); // Initialize router
 
   const itemsPerPage = 10;
   const queryClient = useQueryClient();
@@ -191,11 +192,13 @@ export default function ReportsManagementPage() {
     );
   };
 
+  // const handleViewDetail = (report: Report) => {
+  //   setSelectedReport(report);
+  //   setIsDetailOpen(true);
+  // };
   const handleViewDetail = (report: Report) => {
-    setSelectedReport(report);
-    setIsDetailOpen(true);
+    router.push(`/officer/reports/${report.id}`);
   };
-
   const handleEdit = (report: Report) => {
     setEditingReport(report);
     setIsFormOpen(true);
@@ -312,7 +315,11 @@ export default function ReportsManagementPage() {
                   </TableRow>
                 ) : (
                   currentReports.map((report) => (
-                    <TableRow key={report.id}>
+                    <TableRow
+                      key={report.id}
+                      onClick={() => handleViewDetail(report)}
+                      className="cursor-pointer"
+                    >
                       <TableCell className="font-mono font-semibold">
                         {report.caseNumber}
                       </TableCell>

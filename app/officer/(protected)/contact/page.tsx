@@ -261,10 +261,9 @@
 //   );
 // }
 
-
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -306,6 +305,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { logout } from "@/lib/auth"; // ← Import logout
 
 interface ContactMessage {
   id: string;
@@ -339,60 +339,97 @@ export default function ContactMessagesPage() {
 
   const queryClient = useQueryClient();
 
-  // Fetch contact messages
-  const { data: messages = [], isLoading } = useQuery<ContactMessage[]>({
+  // Get token once (with debug)
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("officerToken") : null;
+
+  // Debug: Log token status on every render
+  useEffect(() => {
+    console.log("[Contact Page Debug] Token status:", {
+      tokenExists: !!token,
+      tokenPreview: token ? token.substring(0, 20) + "..." : "null",
+      timestamp: new Date().toISOString(),
+    });
+  }, [token]);
+
+  // Early redirect if no token
+  useEffect(() => {
+    if (!token && typeof window !== "undefined") {
+      console.warn("[Contact] No token found → forcing logout");
+      toast.error("Session expired or invalid. Please log in again.");
+      logout(); // ← This clears storage and redirects to login
+    }
+  }, [token]);
+
+  const {
+    data: messages = [],
+    isLoading,
+    error,
+  } = useQuery<ContactMessage[]>({
     queryKey: ["contact-messages"],
     queryFn: async () => {
+      if (!token) {
+        throw new Error("No authentication token. Redirecting to login...");
+      }
+
+      console.log(
+        "[Contact Fetch] Requesting with token:",
+        token.substring(0, 20) + "..."
+      );
+
       const response = await fetch("http://localhost:4000/api/contact", {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("officerToken")}`,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
-      if (!response.ok) throw new Error("Failed to fetch contact messages");
-      return response.json();
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[Contact Fetch Error]", response.status, errorText);
+        if (response.status === 401) {
+          toast.error("Unauthorized - session may have expired.");
+          logout(); // Auto-logout on 401
+        }
+        throw new Error(`Failed: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("[Contact Fetch] Success:", data);
+      return data;
     },
+    enabled: !!token, // Don't run query if no token
+    retry: false, // Don't retry 401 forever
   });
 
-  // Mark as handled mutation
+  // Mark as handled mutation (also uses token)
   const handleMutation = useMutation({
     mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
+      if (!token) throw new Error("No token for update");
+
       const response = await fetch(`http://localhost:4000/api/contact/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("officerToken")}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           status: "HANDLED",
           notes,
-          handledById: "current-officer-id", // Replace with actual officer ID from auth context
+          handledById: "current-officer-id", // ← TODO: Replace with real ID
         }),
       });
-      if (!response.ok) throw new Error("Failed to update message");
+
+      if (!response.ok) {
+        const err = await response.text();
+        if (response.status === 401) {
+          toast.error("Session expired during update.");
+          logout();
+        }
+        throw new Error(err || "Update failed");
+      }
+
       return response.json();
-    },
-    onMutate: async ({ id }) => {
-      // Optimistic update
-      await queryClient.cancelQueries({ queryKey: ["contact-messages"] });
-      const previousMessages = queryClient.getQueryData<ContactMessage[]>([
-        "contact-messages",
-      ]);
-
-      queryClient.setQueryData<ContactMessage[]>(
-        ["contact-messages"],
-        (old = []) =>
-          old.map((msg) =>
-            msg.id === id
-              ? {
-                  ...msg,
-                  status: "HANDLED" as const,
-                  handledAt: new Date().toISOString(),
-                }
-              : msg
-          )
-      );
-
-      return { previousMessages };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contact-messages"] });
@@ -401,15 +438,8 @@ export default function ContactMessagesPage() {
       setSelectedMessage(null);
       setNotes("");
     },
-    onError: (err, variables, context) => {
-      // Rollback on error
-      if (context?.previousMessages) {
-        queryClient.setQueryData(
-          ["contact-messages"],
-          context.previousMessages
-        );
-      }
-      toast.error("Failed to update message");
+    onError: (err) => {
+      toast.error(err.message || "Failed to update message");
     },
   });
 
@@ -453,6 +483,17 @@ export default function ContactMessagesPage() {
     return (
       <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-[#003366]" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-8 text-red-600">
+        Error: {error.message}
+        <p className="mt-2 text-sm">
+          Please log out and log in again, or check the console for details.
+        </p>
       </div>
     );
   }

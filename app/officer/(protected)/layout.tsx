@@ -17,12 +17,10 @@
 // }
 "use client";
 
-import type React from "react";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OfficerSidebar } from "@/components/officer-sidebar";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, getUser } from "@/lib/auth";
 import { Loader2 } from "lucide-react";
 
 export default function ProtectedLayout({
@@ -31,25 +29,31 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    const checkAuth = () => {
-      if (!isAuthenticated()) {
-        router.replace("/officer/login");
-      } else {
-        setIsChecking(false);
-      }
-    };
+    // Check auth immediately
+    const isAuth = isAuthenticated();
+    const user = getUser();
 
-    checkAuth();
+    if (isAuth && user?.id) {
+      setIsAuthorized(true);
+    } else {
+      // If not auth, kick them to login
+      router.replace("/officer/login");
+    }
   }, [router]);
 
-  // Show loading while checking auth
-  if (isChecking) {
+  // While we are verifying the token, show a clean loader
+  if (!isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-900" />
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-900" />
+          <p className="text-sm text-muted-foreground font-medium">
+            Verifying Session...
+          </p>
+        </div>
       </div>
     );
   }
@@ -57,9 +61,7 @@ export default function ProtectedLayout({
   return (
     <div className="flex min-h-screen bg-background">
       <OfficerSidebar />
-      <main className="flex-1 ml-64 transition-all duration-300 p-6">
-        {children}
-      </main>
+      <main className="flex-1 ml-64 p-6 transition-all">{children}</main>
     </div>
   );
 }

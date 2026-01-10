@@ -158,7 +158,7 @@ const navLinks = [
   { href: "/officer/cases", label: "Cases", icon: FileText },
   { href: "/officer/blog", label: "Community Blog", icon: BookOpen },
   { href: "/officer/contact", label: "Contact Messages", icon: Mail },
-  { href: "/officer/map", label: "Map View", icon: Map },
+  { href: "/officer/map-two", label: "Map View", icon: Map },
   { href: "/officer/notifications", label: "Notifications", icon: Bell },
   { href: "/officer/officers", label: "Officers", icon: Users },
   { href: "/officer/notices", label: "Safety Notices", icon: Bell }, // New link
