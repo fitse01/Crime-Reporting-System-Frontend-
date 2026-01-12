@@ -1,23 +1,38 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Bell, AlertTriangle, FileText, CheckCircle2, Clock, MessageSquare, Trash2, Check } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Bell,
+  AlertTriangle,
+  FileText,
+  CheckCircle2,
+  Clock,
+  MessageSquare,
+  Trash2,
+  Check,
+} from "lucide-react";
 
 export default function OfficerNotificationsPage() {
-  const router = useRouter()
-  const [filter, setFilter] = useState("all")
+  const router = useRouter();
+  const [filter, setFilter] = useState("all");
 
-  useEffect(() => {
-    const auth = localStorage.getItem("officerAuth")
-    if (!auth) {
-      router.push("/officer/login")
-    }
-  }, [router])
+  // useEffect(() => {
+  //   const auth = localStorage.getItem("officerAuth")
+  //   if (!auth) {
+  //     router.push("/officer/login")
+  //   }
+  // }, [router])
 
   const notifications = [
     {
@@ -108,39 +123,43 @@ export default function OfficerNotificationsPage() {
       icon: FileText,
       link: "/officer/cases/RPT-12345678",
     },
-  ]
+  ];
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "urgent":
-        return "border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/20"
+        return "border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/20";
       case "high":
-        return "border-l-4 border-l-orange-500 bg-orange-50 dark:bg-orange-950/20"
+        return "border-l-4 border-l-orange-500 bg-orange-50 dark:bg-orange-950/20";
       case "medium":
-        return "border-l-4 border-l-blue-500"
+        return "border-l-4 border-l-blue-500";
       case "low":
-        return "border-l-4 border-l-gray-500"
+        return "border-l-4 border-l-gray-500";
       default:
-        return ""
+        return "";
     }
-  }
+  };
 
   const getNotificationIcon = (Icon: any, priority: string) => {
     const colorClass =
       priority === "urgent"
         ? "text-red-600"
         : priority === "high"
-          ? "text-orange-600"
-          : priority === "medium"
-            ? "text-blue-600"
-            : "text-gray-600"
-    return <Icon className={`h-5 w-5 ${colorClass}`} />
-  }
+        ? "text-orange-600"
+        : priority === "medium"
+        ? "text-blue-600"
+        : "text-gray-600";
+    return <Icon className={`h-5 w-5 ${colorClass}`} />;
+  };
 
   const filteredNotifications =
-    filter === "all" ? notifications : filter === "unread" ? notifications.filter((n) => !n.read) : notifications
+    filter === "all"
+      ? notifications
+      : filter === "unread"
+      ? notifications.filter((n) => !n.read)
+      : notifications;
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -154,11 +173,15 @@ export default function OfficerNotificationsPage() {
               <div>
                 <h1 className="text-3xl font-bold">Notifications</h1>
                 <p className="text-muted-foreground">
-                  {unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}
+                  {unreadCount} unread notification
+                  {unreadCount !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
-            <Button variant="outline" onClick={() => alert("All marked as read")}>
+            <Button
+              variant="outline"
+              onClick={() => alert("All marked as read")}
+            >
               <Check className="mr-2 h-4 w-4" />
               Mark All Read
             </Button>
@@ -198,15 +221,21 @@ export default function OfficerNotificationsPage() {
         {/* Notifications List */}
         <div className="space-y-3">
           {filteredNotifications.map((notification) => {
-            const Icon = notification.icon
+            const Icon = notification.icon;
             return (
               <Card
                 key={notification.id}
-                className={`${getPriorityColor(notification.priority)} ${!notification.read ? "shadow-md" : ""}`}
+                className={`${getPriorityColor(notification.priority)} ${
+                  !notification.read ? "shadow-md" : ""
+                }`}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
-                    <div className={`p-2 rounded-lg ${!notification.read ? "bg-accent/20" : "bg-muted"}`}>
+                    <div
+                      className={`p-2 rounded-lg ${
+                        !notification.read ? "bg-accent/20" : "bg-muted"
+                      }`}
+                    >
                       {getNotificationIcon(Icon, notification.priority)}
                     </div>
                     <div className="flex-1">
@@ -214,13 +243,21 @@ export default function OfficerNotificationsPage() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <h3
-                              className={`font-semibold ${!notification.read ? "text-foreground" : "text-muted-foreground"}`}
+                              className={`font-semibold ${
+                                !notification.read
+                                  ? "text-foreground"
+                                  : "text-muted-foreground"
+                              }`}
                             >
                               {notification.title}
                             </h3>
-                            {!notification.read && <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />}
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground">{notification.message}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {notification.message}
+                          </p>
                         </div>
                         <Button
                           variant="ghost"
@@ -232,10 +269,16 @@ export default function OfficerNotificationsPage() {
                         </Button>
                       </div>
                       <div className="flex items-center justify-between mt-3">
-                        <span className="text-xs text-muted-foreground">{notification.time}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {notification.time}
+                        </span>
                         <div className="flex gap-2">
                           {!notification.read && (
-                            <Button variant="ghost" size="sm" onClick={() => alert("Marked as read")}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => alert("Marked as read")}
+                            >
                               <Check className="mr-1 h-3 w-3" />
                               Mark Read
                             </Button>
@@ -251,7 +294,7 @@ export default function OfficerNotificationsPage() {
                   </div>
                 </CardContent>
               </Card>
-            )
+            );
           })}
         </div>
 
@@ -269,7 +312,9 @@ export default function OfficerNotificationsPage() {
         <Card className="mt-8">
           <CardHeader>
             <CardTitle>Notification Preferences</CardTitle>
-            <CardDescription>Customize what notifications you receive</CardDescription>
+            <CardDescription>
+              Customize what notifications you receive
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -281,9 +326,15 @@ export default function OfficerNotificationsPage() {
                 { label: "Court Reminders", enabled: true },
                 { label: "System Announcements", enabled: false },
               ].map((pref, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                >
                   <span className="text-sm font-medium">{pref.label}</span>
-                  <Button variant={pref.enabled ? "default" : "outline"} size="sm">
+                  <Button
+                    variant={pref.enabled ? "default" : "outline"}
+                    size="sm"
+                  >
                     {pref.enabled ? "Enabled" : "Disabled"}
                   </Button>
                 </div>
@@ -293,5 +344,5 @@ export default function OfficerNotificationsPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
