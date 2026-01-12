@@ -117,7 +117,6 @@
 //     </aside>
 //   );
 // }
-
 "use client";
 
 import Link from "next/link";
@@ -139,7 +138,7 @@ import {
   LogOut,
   Bot,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -152,17 +151,68 @@ import {
 import { getUser, getUserInitials, logout, type OfficerUser } from "@/lib/auth";
 import { toast } from "sonner";
 
+// 1. Define allowed roles for each link
 const navLinks = [
-  { href: "/officer/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/officer/reports", label: "Reports", icon: ShieldAlert },
-  { href: "/officer/cases", label: "Cases", icon: FileText },
-  { href: "/officer/blog", label: "Community Blog", icon: BookOpen },
-  { href: "/officer/contact", label: "Contact Messages", icon: Mail },
-  { href: "/officer/map-two", label: "Map View", icon: Map },
-  { href: "/officer/notifications", label: "Notifications", icon: Bell },
-  { href: "/officer/officers", label: "Officers", icon: Users },
-  { href: "/officer/notices", label: "Safety Notices", icon: Bell }, // New link
-  { href: "/officer/ai-analysis", label: "AI Analysis", icon: Bot }, // New AI link
+  {
+    href: "/officer/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    roles: ["SUPER_ADMIN", "ADMIN", "OPERATOR", "OFFICER"],
+  },
+  {
+    href: "/officer/reports",
+    label: "Reports",
+    icon: ShieldAlert,
+    roles: ["SUPER_ADMIN", "ADMIN", "OPERATOR"],
+  },
+  {
+    href: "/officer/cases",
+    label: "Cases",
+    icon: FileText,
+    roles: ["SUPER_ADMIN", "ADMIN", "OPERATOR", "OFFICER"],
+  },
+  {
+    href: "/officer/blog",
+    label: "Community Blog",
+    icon: BookOpen,
+    roles: ["SUPER_ADMIN", "ADMIN"],
+  },
+  {
+    href: "/officer/contact",
+    label: "Contact Messages",
+    icon: Mail,
+    roles: ["SUPER_ADMIN", "ADMIN", "OPERATOR"],
+  },
+  {
+    href: "/officer/map-two",
+    label: "Map View",
+    icon: Map,
+    roles: ["SUPER_ADMIN", "ADMIN", "OPERATOR", "OFFICER"],
+  },
+  {
+    href: "/officer/notifications",
+    label: "Notifications",
+    icon: Bell,
+    roles: ["SUPER_ADMIN", "ADMIN", "OPERATOR", "OFFICER"],
+  },
+  {
+    href: "/officer/officers",
+    label: "Officers",
+    icon: Users,
+    roles: ["SUPER_ADMIN", "ADMIN"],
+  },
+  {
+    href: "/officer/notices",
+    label: "Safety Notices",
+    icon: Bell,
+    roles: ["SUPER_ADMIN", "ADMIN", "OPERATOR"],
+  },
+  {
+    href: "/officer/ai-analysis",
+    label: "AI Analysis",
+    icon: Bot,
+    roles: ["SUPER_ADMIN"],
+  },
 ];
 
 export function OfficerSidebar() {
@@ -175,6 +225,12 @@ export function OfficerSidebar() {
     setUser(currentUser);
   }, []);
 
+  // 2. Filter links based on current user's role
+  const filteredLinks = useMemo(() => {
+    if (!user) return [];
+    return navLinks.filter((link) => link.roles.includes(user.role));
+  }, [user]);
+
   const handleLogout = () => {
     logout();
     toast.success("Logged out successfully");
@@ -183,11 +239,10 @@ export function OfficerSidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-blue-900 text-white transition-all duration-300 flex flex-col",
+        "fixed left-0 top-0 z-40 h-screen bg-[#272F38] text-white transition-all duration-300 flex flex-col",
         collapsed ? "w-16" : "w-64"
       )}
     >
-      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-blue-800">
         {!collapsed && (
           <Link href="/officer/dashboard" className="flex items-center gap-3">
@@ -205,9 +260,9 @@ export function OfficerSidebar() {
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        {navLinks.map((link) => {
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        {/* 3. Map over filteredLinks instead of navLinks */}
+        {filteredLinks.map((link) => {
           const Icon = link.icon;
           const isActive =
             pathname === link.href || pathname.startsWith(link.href + "/");
@@ -229,7 +284,7 @@ export function OfficerSidebar() {
         })}
       </nav>
 
-      {/* User Profile with Dropdown */}
+      {/* Profile and Collapse sections remain the same... */}
       <div className="p-4 border-t border-blue-800">
         {!collapsed && user && (
           <DropdownMenu>
@@ -256,20 +311,15 @@ export function OfficerSidebar() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <span className="text-sm">
-                  <strong>Email:</strong> {user.email}
-                </span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <span className="text-sm">
-                  <strong>Role:</strong> {user.role.replace(/_/g, " ")}
+              <DropdownMenuItem className="cursor-default">
+                <span className="text-xs truncate text-muted-foreground">
+                  {user.email}
                 </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleLogout}
-                className="text-red-600 focus:text-red-600"
+                className="text-red-600 cursor-pointer"
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
@@ -278,7 +328,6 @@ export function OfficerSidebar() {
           </DropdownMenu>
         )}
 
-        {/* Collapse Toggle */}
         <Button
           variant="ghost"
           size="icon"

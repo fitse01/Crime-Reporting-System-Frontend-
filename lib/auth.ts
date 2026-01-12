@@ -1,85 +1,294 @@
-// Authentication utility functions for Officer Portal
+// // Authentication utility functions for Officer Portal
+
+// export interface OfficerUser {
+//     [x: string]: string | null;
+//     id: string
+//     email: string
+//     fullName: string
+//     token: string;
+//     role: "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "OFFICER"
+// }
+
+// // Check if user is authenticated
+// export function isAuthenticated(): boolean {
+//     if (typeof window === "undefined") return false
+//     const token = localStorage.getItem("officerToken")
+//     return !!token
+// }
+
+// // Get current user from localStorage
+// export function getUser(): OfficerUser | null {
+//     if (typeof window === "undefined") return null
+//     const userStr = localStorage.getItem("officerUser")
+//     if (!userStr) return null
+//     try {
+//         return JSON.parse(userStr) as OfficerUser
+//     } catch {
+//         return null
+//     }
+// }
+
+// // Get auth token
+// export function getToken(): string | null {
+//     if (typeof window === "undefined") return null
+//     return localStorage.getItem("officerToken")
+// }
+
+// // Save auth data after login
+// export function saveAuthData(token: string, user: OfficerUser): void {
+//     localStorage.setItem("officerToken", token)
+//     localStorage.setItem("officerUser", JSON.stringify(user))
+// }
+
+// // Clear auth data on logout
+// export function clearAuthData(): void {
+//     localStorage.removeItem("officerToken")
+//     localStorage.removeItem("officerUser")
+// }
+
+// // Logout function
+// export function logout(): void {
+//     clearAuthData()
+//     if (typeof window !== "undefined") {
+//         window.location.href = "/officer/login"
+//     }
+// }
+
+// // Get user initials for avatar
+// export function getUserInitials(fullName: string): string {
+//     const names = fullName.split(" ")
+//     if (names.length >= 2) {
+//         return `${names[0][0]}${names[1][0]}`.toUpperCase()
+//     }
+//     return fullName.substring(0, 2).toUpperCase()
+// }
+
+// // Role-based permission checks
+// export function canManageOfficers(role: OfficerUser["role"]): boolean {
+//     return role === "SUPER_ADMIN" || role === "ADMIN"
+// }
+
+// export function canManageReports(role: OfficerUser["role"]): boolean {
+//     return role === "SUPER_ADMIN" || role === "ADMIN" || role === "OPERATOR"
+// }
+
+
+// // export type OfficerUser = {
+// // token: string;
+// // role: "SUPER_ADMIN" | "ADMIN" | "OPERATOR";
+// // };
+
+// export function getOfficerUser(): OfficerUser | null {
+//     if (typeof window === "undefined") return null;
+
+//     const raw = localStorage.getItem("officerUser");
+//     return raw ? JSON.parse(raw) : null;
+// }
+
+
+// lib/auth.ts - FINAL FIXED VERSION
 
 export interface OfficerUser {
-    id: string
-    email: string
-    fullName: string
+    id: string;
+    email: string;
+    fullName: string;
     token: string;
-    role: "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "OFFICER"
+    role: "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "OFFICER";
 }
 
 // Check if user is authenticated
 export function isAuthenticated(): boolean {
-    if (typeof window === "undefined") return false
-    const token = localStorage.getItem("officerToken")
-    return !!token
+    if (typeof window === "undefined") return false;
+    const token = localStorage.getItem("officerToken");
+    return !!token;
 }
 
-// Get current user from localStorage
+// Get current user (now with token embedded)
 export function getUser(): OfficerUser | null {
-    if (typeof window === "undefined") return null
-    const userStr = localStorage.getItem("officerUser")
-    if (!userStr) return null
+    if (typeof window === "undefined") return null;
+
+    const userStr = localStorage.getItem("officerUser");
+    if (!userStr) return null;
+
     try {
-        return JSON.parse(userStr) as OfficerUser
-    } catch {
-        return null
+        const user = JSON.parse(userStr) as OfficerUser;
+        console.log("[getUser] Loaded:", {
+            id: user.id,
+            hasToken: !!user.token,
+            tokenPreview: user.token ? user.token.substring(0, 20) + "..." : "MISSING",
+        });
+        return user;
+    } catch (e) {
+        console.error("[getUser] Parse error:", e);
+        return null;
     }
 }
 
-// Get auth token
+// Alias for compatibility
+export const getOfficerUser = getUser;
+
+// Get token (prefer embedded, fallback to separate key)
 export function getToken(): string | null {
-    if (typeof window === "undefined") return null
-    return localStorage.getItem("officerToken")
+    if (typeof window === "undefined") return null;
+
+    // Primary: embedded in user
+    const user = getUser();
+    if (user?.token) return user.token;
+
+    // Fallback: separate key
+    return localStorage.getItem("officerToken");
 }
 
-// Save auth data after login
-export function saveAuthData(token: string, user: OfficerUser): void {
-    localStorage.setItem("officerToken", token)
-    localStorage.setItem("officerUser", JSON.stringify(user))
+// Save auth data - FIXED: always embed token inside user
+export function saveAuthData(
+    token: string,
+    userData: {
+        id: string;
+        email: string;
+        fullName: string;
+        role: "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "OFFICER";
+    }
+): void {
+    const fullUser: OfficerUser = {
+        ...userData,
+        token,
+    };
+
+    localStorage.setItem("officerToken", token);
+    localStorage.setItem("officerUser", JSON.stringify(fullUser));
+
+    console.log("[saveAuthData] SUCCESS:", {
+        tokenPreview: token.substring(0, 20) + "...",
+        userWithToken: fullUser,
+    });
 }
 
-// Clear auth data on logout
+// Clear auth
 export function clearAuthData(): void {
-    localStorage.removeItem("officerToken")
-    localStorage.removeItem("officerUser")
+    localStorage.removeItem("officerToken");
+    localStorage.removeItem("officerUser");
 }
 
-// Logout function
+// Logout
 export function logout(): void {
-    clearAuthData()
+    clearAuthData();
     if (typeof window !== "undefined") {
-        window.location.href = "/officer/login"
+        window.location.href = "/officer/login";
     }
 }
 
-// Get user initials for avatar
+// Initials
 export function getUserInitials(fullName: string): string {
-    const names = fullName.split(" ")
-    if (names.length >= 2) {
-        return `${names[0][0]}${names[1][0]}`.toUpperCase()
-    }
-    return fullName.substring(0, 2).toUpperCase()
+    const names = fullName.split(" ");
+    if (names.length >= 2) return `${names[0][0]}${names[1][0]}`.toUpperCase();
+    return fullName.substring(0, 2).toUpperCase();
 }
 
-// Role-based permission checks
+// Permissions
 export function canManageOfficers(role: OfficerUser["role"]): boolean {
-    return role === "SUPER_ADMIN" || role === "ADMIN"
+    return role === "SUPER_ADMIN" || role === "ADMIN";
 }
 
 export function canManageReports(role: OfficerUser["role"]): boolean {
-    return role === "SUPER_ADMIN" || role === "ADMIN" || role === "OPERATOR"
+    return role === "SUPER_ADMIN" || role === "ADMIN" || role === "OPERATOR";
 }
 
 
-// export type OfficerUser = {
-// token: string;
-// role: "SUPER_ADMIN" | "ADMIN" | "OPERATOR";
+
+
+// // lib/auth.ts - COMPLETE FINAL VERSION
+
+// export interface OfficerUser {
+//     id: string;
+//     email: string;
+//     fullName: string;
+//     token: string;
+//     role: "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "OFFICER";
+// }
+
+// // Helper to handle cookies for Middleware compatibility
+// const setRoleCookie = (role: string) => {
+//     if (typeof window !== "undefined") {
+//         document.cookie = `userRole=${role}; path=/; max-age=86400; SameSite=Lax`;
+//     }
 // };
 
-export function getOfficerUser(): OfficerUser | null {
-    if (typeof window === "undefined") return null;
+// const removeRoleCookie = () => {
+//     if (typeof window !== "undefined") {
+//         document.cookie = "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+//     }
+// };
 
-    const raw = localStorage.getItem("officerUser");
-    return raw ? JSON.parse(raw) : null;
-}
+// export function isAuthenticated(): boolean {
+//     if (typeof window === "undefined") return false;
+//     const token = localStorage.getItem("officerToken");
+//     return !!token;
+// }
+
+// export function getUser(): OfficerUser | null {
+//     if (typeof window === "undefined") return null;
+//     const userStr = localStorage.getItem("officerUser");
+//     if (!userStr) return null;
+
+//     try {
+//         return JSON.parse(userStr) as OfficerUser;
+//     } catch (e) {
+//         return null;
+//     }
+// }
+
+// export const getOfficerUser = getUser;
+
+// export function getToken(): string | null {
+//     if (typeof window === "undefined") return null;
+//     const user = getUser();
+//     return user?.token || localStorage.getItem("officerToken");
+// }
+
+// export function saveAuthData(
+//     token: string,
+//     userData: {
+//         id: string;
+//         email: string;
+//         fullName: string;
+//         role: "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "OFFICER";
+//     }
+// ): void {
+//     const fullUser: OfficerUser = { ...userData, token };
+
+//     // 1. Save to LocalStorage for Client-side state
+//     localStorage.setItem("officerToken", token);
+//     localStorage.setItem("officerUser", JSON.stringify(fullUser));
+
+//     // 2. Save to Cookie for Server-side Middleware access
+//     setRoleCookie(userData.role);
+
+//     console.log("[saveAuthData] Auth Synchronized (LocalStorage & Cookies)");
+// }
+
+// export function clearAuthData(): void {
+//     localStorage.removeItem("officerToken");
+//     localStorage.removeItem("officerUser");
+//     removeRoleCookie();
+// }
+
+// export function logout(): void {
+//     clearAuthData();
+//     if (typeof window !== "undefined") {
+//         window.location.href = "/officer/login";
+//     }
+// }
+
+// // UI Helpers
+// export function getUserInitials(fullName: string): string {
+//     return fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
+// }
+
+// // Permissions
+// export function canManageOfficers(role: OfficerUser["role"]): boolean {
+//     return role === "SUPER_ADMIN" || role === "ADMIN";
+// }
+
+// export function canManageReports(role: OfficerUser["role"]): boolean {
+//     return ["SUPER_ADMIN", "ADMIN", "OPERATOR"].includes(role);
+// }

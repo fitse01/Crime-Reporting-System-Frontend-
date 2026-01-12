@@ -25,11 +25,45 @@ export default function AIHelpPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // const sendMessage = async () => {
+  //   if (!input.trim() || loading) return;
+
+  //   const userMessage = { role: "user" as const, content: input };
+  //   setMessages((prev) => [...prev, userMessage]);
+  //   setInput("");
+  //   setLoading(true);
+
+  //   try {
+  //     const res = await fetch("http://localhost:4000/api/ai/public", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ query: input }),
+  //     });
+
+  //     const data = await res.json();
+  //     const assistantMessage = {
+  //       role: "assistant" as const,
+  //       content: data.response || "Sorry, I couldn't process that.",
+  //     };
+  //     setMessages((prev) => [...prev, assistantMessage]);
+  //   } catch (err) {
+  //     setMessages((prev) => [
+  //       ...prev,
+  //       {
+  //         role: "assistant",
+  //         content: "Error connecting to AI. Please try again later.",
+  //       },
+  //     ]);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
     const userMessage = { role: "user" as const, content: input };
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input; // Capture input before clearing
     setInput("");
     setLoading(true);
 
@@ -37,28 +71,45 @@ export default function AIHelpPage() {
       const res = await fetch("http://localhost:4000/api/ai/public", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: input }),
+        body: JSON.stringify({ query: currentInput }),
       });
 
       const data = await res.json();
-      const assistantMessage = {
-        role: "assistant" as const,
-        content: data.response || "Sorry, I couldn't process that.",
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+      console.log("Debug - AI Response:", data);
+
+      // Check if the backend returned an error object instead of a response
+      if (data.error) {
+        // If the model fails again, we see the error clearly
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: `⚠️ AI Service Note: ${data.error}`,
+          },
+        ]);
+      } else {
+        // Success!
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: data.response,
+          },
+        ]);
+      }
     } catch (err) {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "Error connecting to AI. Please try again later.",
+          content:
+            "Network error: Could not reach the AI server. Please check your connection.",
         },
       ]);
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div className="container mx-auto p-8 max-w-4xl">
       <Card className="h-[80vh] flex flex-col">

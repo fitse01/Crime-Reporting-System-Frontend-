@@ -176,15 +176,29 @@ export default function OfficerLoginPage() {
 
       return response.json() as Promise<LoginResponse>;
     },
+    // onSuccess: (data) => {
+    // // Save token and user to localStorage
+    // saveAuthData(data.token, data.user);
+
+    //   // Show success toast
+    //   toast.success(`Welcome back, ${data.user.fullName}!`);
+
+    //   // Redirect to dashboard
+    //   router.push("/officer/dashboard");
+    // },
     onSuccess: (data) => {
-      // Save token and user to localStorage
+      // 1. Save to localStorage (for the UI/Client state)
       saveAuthData(data.token, data.user);
 
-      // Show success toast
+      // 2. Save to Cookie (for the Middleware/Server state)
+      // This is the "Key" that opens the door in the middleware
+      document.cookie = `userRole=${data.user.role}; path=/; max-age=86400; SameSite=Lax`;
+
       toast.success(`Welcome back, ${data.user.fullName}!`);
 
-      // Redirect to dashboard
-      router.push("/officer/dashboard");
+      // Use window.location.href for the first redirect after login
+      // to ensure the cookie is fully recognized by the server
+      window.location.href = "/officer/dashboard";
     },
     onError: (error: Error) => {
       toast.error(

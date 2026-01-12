@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, User, ArrowRight, Newspaper, Loader2 } from "lucide-react";
 
-export default function BlogPage() {
+export default function HomeBlogPage() {
   const [activeCategory, setActiveCategory] = useState("All");
 
   // 1. Fetch Posts from real API
@@ -60,78 +60,6 @@ export default function BlogPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center p-4 bg-blue-50 rounded-full mb-4">
-            <Newspaper className="h-10 w-10 text-blue-600" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
-            Police Blog
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            News, safety tips, and updates from the Adama City Police Department
-          </p>
-        </div>
-
-        {/* Dynamic Category Filter */}
-        <div className="flex flex-wrap gap-2 justify-center mb-12">
-          {categories.map((cat) => (
-            <Button
-              key={cat}
-              variant={activeCategory === cat ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveCategory(cat)}
-              className="rounded-full px-6"
-            >
-              {cat}
-            </Button>
-          ))}
-        </div>
-
-        {/* Featured Post (Real Data) */}
-        {featuredPost && (
-          <Card className="mb-12 overflow-hidden border-none shadow-xl hover:shadow-2xl transition-shadow">
-            <div className="grid md:grid-cols-2 gap-0">
-              <div className="relative h-48 md:h-auto min-h-[350px]">
-                <img
-                  src={featuredPost.coverImageUrl || "/placeholder.svg"}
-                  alt={featuredPost.title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-8 md:p-12 flex flex-col justify-center bg-white">
-                <Badge className="w-fit mb-4 bg-blue-700">
-                  {featuredPost.category?.name || "News"}
-                </Badge>
-                <h2 className="text-2xl md:text-4xl font-bold mb-4 leading-tight">
-                  {featuredPost.title}
-                </h2>
-                <p className="text-muted-foreground mb-6 text-lg line-clamp-3">
-                  {featuredPost.summary}
-                </p>
-                <div className="flex items-center gap-6 text-sm text-muted-foreground mb-8 border-t pt-4">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-blue-600" />
-                    {featuredPost.author?.fullName}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-                    {new Date(featuredPost.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-                <Link href={`/blog/${featuredPost.id}`}>
-                  <Button
-                    size="lg"
-                    className="bg-blue-800 hover:bg-blue-900 w-fit"
-                  >
-                    Read More
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </Card>
-        )}
-
         {/* Blog Grid (Real Data) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {remainingPosts.map((post: any) => (
@@ -175,19 +103,6 @@ export default function BlogPage() {
             </Link>
           ))}
         </div>
-
-        {/* Load More Articles */}
-        {posts.length > 0 && (
-          <div className="text-center mt-16">
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-md px-10 border-gray-300"
-            >
-              Load More Articles
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

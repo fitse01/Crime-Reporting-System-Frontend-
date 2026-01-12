@@ -1,6 +1,18 @@
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-// import { Badge } from "@/components/ui/badge"
-// import { AlertTriangle, AlertCircle, Info, MapPin, Calendar } from "lucide-react"
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+//   CardTitle,
+// } from "@/components/ui/card";
+// import { Badge } from "@/components/ui/badge";
+// import {
+//   AlertTriangle,
+//   AlertCircle,
+//   Info,
+//   MapPin,
+//   Calendar,
+// } from "lucide-react";
 
 // // Mock safety notices data
 // const safetyNotices = [
@@ -29,7 +41,11 @@
 //     date: "2024-01-18",
 //     description:
 //       "Due to road construction, Main Street will be closed between 5th and 8th Avenue from January 22-30. Please use alternative routes.",
-//     tips: ["Use 6th Avenue as alternative route", "Expect delays during peak hours", "Follow temporary traffic signs"],
+//     tips: [
+//       "Use 6th Avenue as alternative route",
+//       "Expect delays during peak hours",
+//       "Follow temporary traffic signs",
+//     ],
 //   },
 //   {
 //     id: 3,
@@ -95,32 +111,32 @@
 //       "Monitor weather updates",
 //     ],
 //   },
-// ]
+// ];
 
 // export default function SafetyPage() {
 //   const getSeverityColor = (severity: string) => {
 //     switch (severity) {
 //       case "high":
-//         return "destructive"
+//         return "destructive";
 //       case "medium":
-//         return "default"
+//         return "default";
 //       case "low":
-//         return "secondary"
+//         return "secondary";
 //       default:
-//         return "outline"
+//         return "outline";
 //     }
-//   }
+//   };
 
 //   const getSeverityIcon = (severity: string) => {
 //     switch (severity) {
 //       case "high":
-//         return <AlertTriangle className="h-5 w-5" />
+//         return <AlertTriangle className="h-5 w-5" />;
 //       case "medium":
-//         return <AlertCircle className="h-5 w-5" />
+//         return <AlertCircle className="h-5 w-5" />;
 //       default:
-//         return <Info className="h-5 w-5" />
+//         return <Info className="h-5 w-5" />;
 //     }
-//   }
+//   };
 
 //   return (
 //     <div className="container mx-auto px-4 py-12">
@@ -129,9 +145,12 @@
 //           <div className="inline-flex items-center justify-center p-4 bg-accent/10 rounded-full mb-4">
 //             <AlertTriangle className="h-10 w-10 text-accent" />
 //           </div>
-//           <h1 className="text-3xl md:text-4xl font-bold mb-4">Safety Notices</h1>
+//           <h1 className="text-3xl md:text-4xl font-bold mb-4">
+//             Safety Notices
+//           </h1>
 //           <p className="text-lg text-muted-foreground">
-//             Stay informed about important safety alerts, warnings, and community updates
+//             Stay informed about important safety alerts, warnings, and community
+//             updates
 //           </p>
 //         </div>
 
@@ -150,7 +169,9 @@
 //               <div className="text-2xl font-bold text-primary">
 //                 {safetyNotices.filter((n) => n.severity === "medium").length}
 //               </div>
-//               <div className="text-sm text-muted-foreground">Medium Priority</div>
+//               <div className="text-sm text-muted-foreground">
+//                 Medium Priority
+//               </div>
 //             </CardContent>
 //           </Card>
 //           <Card>
@@ -171,14 +192,24 @@
 //                 <div className="flex items-start justify-between gap-4">
 //                   <div className="flex items-start gap-3 flex-1">
 //                     <div
-//                       className={`p-2 rounded-lg ${notice.severity === "high" ? "bg-destructive/10" : notice.severity === "medium" ? "bg-primary/10" : "bg-secondary/50"}`}
+//                       className={`p-2 rounded-lg ${
+//                         notice.severity === "high"
+//                           ? "bg-destructive/10"
+//                           : notice.severity === "medium"
+//                           ? "bg-primary/10"
+//                           : "bg-secondary/50"
+//                       }`}
 //                     >
 //                       {getSeverityIcon(notice.severity)}
 //                     </div>
 //                     <div className="flex-1">
 //                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-//                         <CardTitle className="text-xl">{notice.title}</CardTitle>
-//                         <Badge variant={getSeverityColor(notice.severity)}>{notice.category}</Badge>
+//                         <CardTitle className="text-xl">
+//                           {notice.title}
+//                         </CardTitle>
+//                         <Badge variant={getSeverityColor(notice.severity)}>
+//                           {notice.category}
+//                         </Badge>
 //                       </div>
 //                       <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
 //                         <div className="flex items-center gap-1">
@@ -195,12 +226,17 @@
 //                 </div>
 //               </CardHeader>
 //               <CardContent className="space-y-4">
-//                 <CardDescription className="text-base">{notice.description}</CardDescription>
+//                 <CardDescription className="text-base">
+//                   {notice.description}
+//                 </CardDescription>
 //                 <div className="bg-muted p-4 rounded-lg">
 //                   <p className="font-semibold text-sm mb-2">Safety Tips:</p>
 //                   <ul className="space-y-1">
 //                     {notice.tips.map((tip, index) => (
-//                       <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+//                       <li
+//                         key={index}
+//                         className="text-sm text-muted-foreground flex items-start gap-2"
+//                       >
 //                         <span className="text-accent mt-1">•</span>
 //                         <span>{tip}</span>
 //                       </li>
@@ -217,8 +253,8 @@
 //           <CardHeader className="text-center">
 //             <CardTitle>Stay Updated</CardTitle>
 //             <CardDescription>
-//               Want to receive safety alerts directly? Sign up for notifications at your local police station or follow
-//               us on social media.
+//               Want to receive safety alerts directly? Sign up for notifications
+//               at your local police station or follow us on social media.
 //             </CardDescription>
 //           </CardHeader>
 //           <CardContent className="text-center">
@@ -229,431 +265,321 @@
 //         </Card>
 //       </div>
 //     </div>
-//   )
-// }
-
-// app/(public)/safety/page.tsx
-
-// "use client";
-
-// import { useQuery } from "@tanstack/react-query";
-// import { Badge } from "@/components/ui/badge";
-// import { Card } from "@/components/ui/card";
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// import { format } from "date-fns";
-// import { cn } from "@/lib/utils";
-// import { AlertTriangle } from "lucide-react";
-
-// export default function SafetyNoticesPage() {
-//   const { data: notices = [], isLoading } = useQuery({
-//     queryKey: ["public-notices"],
-//     queryFn: async () => {
-//       const res = await fetch("http://localhost:4000/api/notices");
-//       if (!res.ok) throw new Error("Failed");
-//       const data = await res.json();
-//       return data.notices.filter((n: any) => n.isPublished);
-//     },
-//   });
-
-//   const high = notices.filter((n: any) => n.severity === "HIGH");
-//   const medium = notices.filter((n: any) => n.severity === "MEDIUM");
-//   const low = notices.filter((n: any) => n.severity === "LOW");
-
-//   const renderNotice = (notice: any) => (
-//     <Card key={notice.id} className="mb-8">
-//       <div
-//         className={cn(
-//           "border-l-8 p-6",
-//           notice.severity === "HIGH"
-//             ? "border-l-red-500"
-//             : notice.severity === "MEDIUM"
-//             ? "border-l-orange-500"
-//             : "border-l-blue-500"
-//         )}
-//       >
-//         <div className="flex items-start justify-between mb-4">
-//           <div className="flex items-center gap-3">
-//             <Badge>{notice.type}</Badge>
-//             <span className="text-sm text-muted-foreground">
-//               {notice.location || "Citywide"} •{" "}
-//               {format(new Date(notice.createdAt), "MMM d, yyyy")}
-//             </span>
-//           </div>
-//           <Badge variant="outline" className="text-red-600">
-//             N 3 Issues
-//           </Badge>
-//         </div>
-
-//         <h3 className="text-xl font-bold mb-4">{notice.title}</h3>
-
-//         <p className="mb-6">{notice.content}</p>
-
-//         {notice.imageUrl && (
-//           <img
-//             src={notice.imageUrl}
-//             alt={notice.title}
-//             className="w-full h-64 object-cover rounded mb-6"
-//           />
-//         )}
-
-//         <div
-//           className="prose prose-lg max-w-none"
-//           dangerouslySetInnerHTML={{ __html: notice.description }}
-//         />
-
-//         <div className="mt-6 p-4 bg-muted rounded">
-//           <p className="font-semibold mb-2">Safety Tips:</p>
-//           <div
-//             className="prose"
-//             dangerouslySetInnerHTML={{ __html: notice.description }}
-//           />
-//         </div>
-//       </div>
-//     </Card>
-//   );
-
-//   if (isLoading) return <div className="p-8">Loading safety notices...</div>;
-
-//   return (
-//     <div className="container mx-auto p-8">
-//       <div className="text-center mb-12">
-//         <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-//           <AlertTriangle className="h-8 w-8 text-blue-600" />
-//         </div>
-//         <h1 className="text-4xl font-bold mb-4">Safety Notices</h1>
-//         <p className="text-xl text-muted-foreground">
-//           Stay informed about important safety alerts, warnings, and community
-//           updates
-//         </p>
-//       </div>
-
-//       <Tabs defaultValue="high" className="mb-8">
-//         <TabsList className="grid w-full max-w-2xl mx-auto h-auto grid-cols-2 md:grid-cols-4 p-1 bg-muted/50">
-//           {/* All Notices */}
-//           <TabsTrigger
-//             value="all"
-//             className="py-2 data-[state=active]:bg-background"
-//           >
-//             All
-//             <Badge
-//               className="ml-2 bg-slate-200 text-slate-700"
-//               variant="secondary"
-//             >
-//               {notices.length}
-//             </Badge>
-//           </TabsTrigger>
-
-//           {/* High Priority */}
-//           <TabsTrigger
-//             value="high"
-//             className="py-2 data-[state=active]:bg-background"
-//           >
-//             High
-//             <Badge
-//               className="ml-2 bg-red-100 text-red-700 hover:bg-red-100"
-//               variant="outline"
-//             >
-//               {high.length}
-//             </Badge>
-//           </TabsTrigger>
-
-//           {/* Medium Priority */}
-//           <TabsTrigger
-//             value="medium"
-//             className="py-2 data-[state=active]:bg-background"
-//           >
-//             Medium
-//             <Badge
-//               className="ml-2 bg-orange-100 text-orange-700 hover:bg-orange-100"
-//               variant="outline"
-//             >
-//               {medium.length}
-//             </Badge>
-//           </TabsTrigger>
-
-//           {/* Informational */}
-//           <TabsTrigger
-//             value="informational"
-//             className="py-2 data-[state=active]:bg-background"
-//           >
-//             Low
-//             <Badge
-//               className="ml-2 bg-blue-100 text-blue-700 hover:bg-blue-100"
-//               variant="outline"
-//             >
-//               {low.length}
-//             </Badge>
-//           </TabsTrigger>
-//         </TabsList>
-//         {/* /* Updated Part */}
-//         <TabsContent value="all" className="mt-6">
-//           {notices.length === 0 ? (
-//             <p className="text-center py-12">No notices available.</p>
-//           ) : (
-//             notices.map(renderNotice)
-//           )}
-//         </TabsContent>
-//         <TabsContent value="high">
-//           {high.length === 0 ? (
-//             <p className="text-center py-12">No high priority notices</p>
-//           ) : (
-//             high.map(renderNotice)
-//           )}
-//         </TabsContent>
-//         <TabsContent value="medium">
-//           {medium.length === 0 ? (
-//             <p className="text-center py-12">No medium priority notices</p>
-//           ) : (
-//             medium.map(renderNotice)
-//           )}
-//         </TabsContent>
-//         <TabsContent value="informational">
-//           {low.length === 0 ? (
-//             <p className="text-center py-12">No informational notices</p>
-//           ) : (
-//             low.map(renderNotice)
-//           )}
-//         </TabsContent>
-//       </Tabs>
-
-//       <Card className="mt-12 p-8 text-center">
-//         <h3 className="text-xl font-bold mb-4">Stay Updated</h3>
-//         <p className="text-muted-foreground mb-6">
-//           Want to receive safety alerts directly? Sign up for notifications at
-//           your local police station or follow us on social media.
-//         </p>
-//         <p className="text-sm text-muted-foreground">
-//           For immediate emergencies, always call 911
-//         </p>
-//       </Card>
-//     </div>
 //   );
 // }
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Info, Clock, MapPin } from "lucide-react";
-import { toast } from "sonner";
-import { format } from "date-fns";
-// import { AIChat } from "@/components/ai-chat";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  MapPin,
+  Calendar,
+  BellRing,
+  ShieldCheck,
+  SearchX,
+  ArrowRight,
+  ExternalLink,
+} from "lucide-react";
+import Image from "next/image";
 
-interface Notice {
+interface SafetyNotice {
   id: string;
   title: string;
-  content: string;
-  description: string;
-  type: string;
-  severity: string;
-  isPublished: boolean;
-  imageUrl?: string;
-  location?: string;
-  createdBy: any;
+  severity: "high" | "medium" | "low";
+  category: string;
+  location: string;
   createdAt: string;
+  description: string;
+  tips: string[];
+  imageUrl?: string;
 }
 
-const API_BASE = "http://localhost:4000/api";
-
 export default function SafetyPage() {
-  const [notices, setNotices] = useState<Notice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedSeverity, setSelectedSeverity] = useState("HIGH");
-  const [showAIChat, setShowAIChat] = useState(false);
-
-  useEffect(() => {
-    fetchNotices();
-  }, []);
-
-  const fetchNotices = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE}/notices`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      const publishedNotices = (data.notices || data || []).filter(
-        (n: Notice) => n.isPublished
-      );
-      setNotices(publishedNotices);
-    } catch (error) {
-      toast.error("Failed to load notices");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case "HIGH":
-        return "bg-red-100 border-l-4 border-red-500";
-      case "MEDIUM":
-        return "bg-orange-100 border-l-4 border-orange-500";
-      case "LOW":
-        return "bg-blue-100 border-l-4 border-blue-500";
-      default:
-        return "bg-gray-100 border-l-4 border-gray-500";
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "ALERT":
-        return <AlertCircle className="w-5 h-5 text-red-600" />;
-      case "INFO":
-        return <Info className="w-5 h-5 text-blue-600" />;
-      default:
-        return <AlertCircle className="w-5 h-5 text-gray-600" />;
-    }
-  };
-
-  const filteredNotices = notices.filter((n) => {
-    if (selectedSeverity === "HIGH") return n.severity === "HIGH";
-    if (selectedSeverity === "MEDIUM") return n.severity === "MEDIUM";
-    if (selectedSeverity === "LOW")
-      return n.severity !== "HIGH" && n.severity !== "MEDIUM";
-    return true;
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["safety-notices"],
+    queryFn: async () => {
+      const res = await fetch("http://localhost:4000/api/notices");
+      if (!res.ok) throw new Error("Failed to fetch notices");
+      return res.json();
+    },
   });
 
-  if (loading)
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
-    );
+  const safetyList: SafetyNotice[] = React.useMemo(() => {
+    if (!data) return [];
+    return Array.isArray(data) ? data : data.notices || data.data || [];
+  }, [data]);
+
+  const getSeverityTheme = (severity: string) => {
+    switch (severity) {
+      case "high":
+        return {
+          color: "destructive",
+          accent: "text-red-600",
+          border: "border-red-100",
+          bg: "bg-red-20/30",
+          glow: "shadow-red-100/50",
+        };
+      case "medium":
+        return {
+          color: "default",
+          accent: "text-amber-600",
+          border: "border-amber-100",
+          bg: "bg-amber-50/30",
+          glow: "shadow-amber-200/50",
+        };
+      default:
+        return {
+          color: "secondary",
+          accent: "text-blue-600",
+          border: "border-blue-100",
+          bg: "bg-blue-50/30",
+          glow: "shadow-blue-200/50",
+        };
+    }
+  };
+
+  if (isError) return <ErrorState />;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold mb-3 text-slate-900">
-            Public Safety Notices
-          </h1>
-          <p className="text-lg text-slate-600 mb-6">
-            Stay informed about important safety alerts and notices in your
-            area.
-          </p>
-          <Button
-            onClick={() => setShowAIChat(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+    <div className="min-h-screen bg-white">
+      {/* 1. Sophisticated Header Section */}
+      <div className="relative pt-20 pb-16 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[20px_20px] mask-[radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-50" />
+
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          <Badge
+            variant="outline"
+            className="mb-6 px-4 py-1.5 rounded-full border-slate-200 bg-white text-slate-500 font-medium tracking-tight shadow-sm"
           >
-            <Info className="w-4 h-4" />
-            Ask AI About Safety
-          </Button>
+            <span className="relative flex h-2 w-2 mr-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>
+            Live Safety Network
+          </Badge>
+          <h1 className="text-5xl md:text-5xl font-black text-slate-900 tracking-tight mb-6">
+            Safety{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+              Notices
+            </span>
+          </h1>
+          <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
+            Protecting Adama City through transparent, real-time communication.
+            Stay informed about your surroundings.
+          </p>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 max-w-6xl pb-24">
+        {/* 2. Stats Section with "Neumorphic" touches */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20 ">
+          {isLoading ? (
+            <StatsSkeleton />
+          ) : (
+            <>
+              <StatCard
+                label="Critical Alerts"
+                count={safetyList.filter((n) => n.severity === "high").length}
+                color="text-red-600"
+                icon={AlertTriangle}
+              />
+              <StatCard
+                label="Active Warnings"
+                count={safetyList.filter((n) => n.severity === "medium").length}
+                color="text-amber-600"
+                icon={AlertCircle}
+              />
+              <StatCard
+                label="General Info"
+                count={safetyList.filter((n) => n.severity === "low").length}
+                color="text-blue-600"
+                icon={Info}
+              />
+            </>
+          )}
         </div>
 
-        <Tabs
-          defaultValue="HIGH"
-          className="mb-8"
-          onValueChange={setSelectedSeverity}
-        >
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="HIGH" className="gap-2">
-              <span className="w-3 h-3 rounded-full bg-red-500"></span>
-              High Priority
-            </TabsTrigger>
-            <TabsTrigger value="MEDIUM" className="gap-2">
-              <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-              Medium Priority
-            </TabsTrigger>
-            <TabsTrigger value="LOW" className="gap-2">
-              <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-              Informational
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={selectedSeverity} className="space-y-4 mt-6">
-            {filteredNotices.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground text-lg">
-                    No notices in this category
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredNotices.map((notice) => (
-                <div
+        {/* 3. The Feed: Focus on White Space & Image Masking */}
+        <div className="space-y-16">
+          {isLoading ? (
+            <FeedSkeleton />
+          ) : (
+            safetyList.map((notice) => {
+              const theme = getSeverityTheme(notice.severity);
+              return (
+                <Card
                   key={notice.id}
-                  className={`rounded-lg p-6 ${getSeverityColor(
-                    notice.severity
-                  )} transition-all hover:shadow-lg`}
+                  className={`group border-none shadow-2xl ${theme.glow} rounded-[2.5rem] overflow-hidden bg-white`}
                 >
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      {getTypeIcon(notice.type)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="text-xl font-bold text-slate-900">
-                            {notice.title}
-                          </h3>
-                          <div className="flex gap-2 mt-2">
-                            <Badge variant="outline">{notice.type}</Badge>
-                            {notice.location && (
-                              <Badge variant="outline" className="gap-1">
-                                <MapPin className="w-3 h-3" />
-                                {notice.location}
-                              </Badge>
-                            )}
-                          </div>
+                  <div className=" max-h-80 flex flex-col lg:flex-row items-stretch">
+                    {/* Image with Overlays */}
+                    <div className="relative w-full lg:w-105 min-h-55 bg-slate-100 overflow-hidden">
+                      {notice.imageUrl ? (
+                        <Image
+                          src={notice.imageUrl}
+                          alt={notice.title}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+                          <ShieldCheck className="w-20 h-20 text-slate-200" />
                         </div>
-                        <Badge className="bg-slate-600 text-white">
-                          {filteredNotices.length} Issues
+                      )}
+                      <div className="absolute top-8 left-8">
+                        <Badge
+                          variant={theme.color as any}
+                          className="font-bold tracking-tighter uppercase px-4 py-1.5 rounded-xl shadow-lg"
+                        >
+                          {notice.category}
                         </Badge>
                       </div>
+                    </div>
 
-                      <p className="text-slate-700 mb-4">{notice.content}</p>
-
-                      <div
-                        className="text-sm text-slate-700 mb-4 prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: notice.description }}
-                      />
-
-                      {notice.imageUrl && (
-                        <img
-                          src={notice.imageUrl || "/placeholder.svg"}
-                          alt={notice.title}
-                          className="rounded-lg mb-4 w-full max-h-64 object-cover"
-                        />
-                      )}
-
-                      <div className="flex items-center justify-between text-sm text-slate-600">
+                    {/* Content with Layered Typography */}
+                    <div className="flex-1 px-8 py-4 md:px-14 lg:px-16">
+                      <div className="flex flex-wrap items-center gap-6 mb-8 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                         <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4" />
-                          {format(
-                            new Date(notice.createdAt),
-                            "MMM dd, yyyy HH:mm"
-                          )}
+                          <MapPin className="w-4 h-4 text-blue-500" />{" "}
+                          {notice.location}
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-700 bg-transparent"
-                        >
-                          Read More
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-blue-500" />{" "}
+                          {new Date(notice.createdAt).toDateString()}
+                        </div>
+                      </div>
+
+                      <CardTitle className="text-2xl md:text-3xl font-black text-slate-900 mb-6 leading-[1.1] tracking-tight">
+                        {notice.title}
+                      </CardTitle>
+
+                      <CardDescription className="text-lg text-slate-600 leading-relaxed mb-6 max-w-2xl">
+                        {notice.description}
+                      </CardDescription>
+
+                      {/* Glassmorphism Tips Box */}
+                      <div
+                        className={`${theme.bg} backdrop-blur-sm rounded-3xl px-8 py-4 border ${theme.border} relative overflow-hidden`}
+                      >
+                        <div className="relative z-10">
+                          <h4
+                            className={`text-xs font-black uppercase tracking-widest ${theme.accent} mb-4 flex items-center gap-2`}
+                          >
+                            <BellRing className="w-4 h-4" /> Recommended Action
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {notice.tips?.map((tip, i) => (
+                              <div
+                                key={i}
+                                className="flex items-start gap-3 text-sm font-semibold text-slate-700"
+                              >
+                                <div
+                                  className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${theme.accent.replace(
+                                    "text",
+                                    "bg"
+                                  )}`}
+                                />
+                                {tip}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
+                </Card>
+              );
+            })
+          )}
+        </div>
       </div>
 
-      {showAIChat && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl h-96 shadow-lg">
-            {/* <AIChat onClose={() => setShowAIChat(false)} role="public" /> */}
-          </Card>
+      {/* Footer Call to Action */}
+      <div className="mt-24 p-12 md:px-20   bg-[#272F38] text-white relative overflow-hidden">
+        <div className="absolute -bottom-24 -right-24 h-96 w-96 bg-gray-600/20 rounded-full blur-3xl" />
+        <div className="relative z-10 max-w-3xl">
+          <BellRing className="h-12 w-12 text-blue-500 mb-8" />
+          <h2 className="text-4xl md:text-3xl font-black mb-6 tracking-tighter">
+            Stay informed, <br />
+            stay safe.
+          </h2>
+          <p className="text-xl text-slate-400 mb-10 leading-relaxed">
+            Subscribe to our emergency alert system to receive SMS and email
+            notifications regarding critical incidents in Adama City.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 bg-white/10 border border-white/20 rounded-2xl px-8 h-16 outline-none focus:ring-4 ring-blue-500/50 transition-all"
+            />
+            <button className="bg-blue-600 hover:bg-blue-700 h-16 px-10 rounded-2xl font-black flex items-center justify-center gap-2 group transition-all">
+              Subscribe{" "}
+              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
         </div>
-      )}
-    </main>
+      </div>
+    </div>
   );
+}
+
+// --- Internal UI Components for better Clean Code ---
+
+function StatCard({ label, count, color, icon: Icon }: any) {
+  return (
+    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 flex items-center justify-between group hover:border-blue-200 transition-all">
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">
+          {label}
+        </p>
+        <h3 className={`text-3xl font-black ${color} tracking-tighter`}>
+          {count}
+        </h3>
+      </div>
+      <div
+        className={`p-4 rounded-2xl bg-slate-50 group-hover:scale-110 transition-transform`}
+      >
+        <Icon className={`w-6 h-6 ${color}`} />
+      </div>
+    </div>
+  );
+}
+
+function ErrorState() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen text-center">
+      <div className="bg-red-50 p-8 rounded-[3rem] border border-red-100 mb-6">
+        <SearchX className="w-16 h-16 text-red-500" />
+      </div>
+      <h2 className="text-3xl font-black text-slate-900">System Offline</h2>
+      <p className="text-slate-500 mt-2">
+        The safety database is currently unreachable. <br />
+        Please try again in a moment.
+      </p>
+    </div>
+  );
+}
+
+function StatsSkeleton() {
+  return Array(3)
+    .fill(0)
+    .map((_, i) => (
+      <Skeleton key={i} className="h-32 w-full rounded-[2.5rem]" />
+    ));
+}
+
+function FeedSkeleton() {
+  return Array(2)
+    .fill(0)
+    .map((_, i) => (
+      <Skeleton key={i} className="h-[400px] w-full rounded-[3rem]" />
+    ));
 }

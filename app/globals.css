@@ -124,3 +124,10 @@
     @apply bg-background text-foreground;
   }
 }
+/* HERO BACKGROUND CLASS */
+.hero-bg {
+  background-image: url("/hero 6.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
