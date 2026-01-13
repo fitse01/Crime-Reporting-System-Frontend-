@@ -14,6 +14,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { formatDistanceToNow, format } from "date-fns";
 import {
   AlertCircle,
@@ -27,6 +34,8 @@ import {
   Eye,
   ChevronDown,
 } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { DialogTrigger } from "@radix-ui/react-dialog";
 
 interface CrimeType {
   id: number;
@@ -58,6 +67,13 @@ interface Evidence {
   createdAt: string;
 }
 
+interface Officer {
+  id: string;
+  user: { fullName: string };
+  activeCaseCount: number;
+  reputation: { rating: number };
+}
+
 interface Report {
   id: string;
   title: string;
@@ -67,8 +83,8 @@ interface Report {
   reporterEmail: string | null;
   isAnonymous: boolean;
   crimeTypeId: number;
-  status: "NEW" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
-  priority: "HIGH" | "MEDIUM" | "LOW";
+  status: string;
+  priority: string;
   channel: string;
   locationId: string | null;
   lat: number;
@@ -77,14 +93,13 @@ interface Report {
   aiSeverityScore: number | null;
   aiSummary: string | null;
   createdById: string | null;
-  assignedOfficerId: string;
+  assignedOfficerId: string | null;
   createdAt: string;
   updatedAt: string;
   caseNumber: string;
   crimeType: CrimeType;
   location: Location | null;
-  createdBy: any | null;
-  assignedOfficer: AssignedOfficer;
+  assignedOfficer: AssignedOfficer | null;
   evidence: Evidence[];
 }
 
@@ -105,12 +120,18 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case "NEW":
       return "destructive";
+    case "PENDING_REVIEW":
+      return "secondary";
+    case "APPROVED":
+      return "default";
     case "IN_PROGRESS":
       return "default";
     case "RESOLVED":
       return "secondary";
     case "CLOSED":
       return "outline";
+    case "REJECTED":
+      return "destructive";
     default:
       return "secondary";
   }
@@ -135,7 +156,6 @@ const ReportDetailSkeleton = () => (
           <div className="space-y-3">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-4 w-4/6" />
           </div>
         </CardContent>
       </Card>
@@ -155,6 +175,7 @@ export default function ReportDetailPage() {
   const [noteText, setNoteText] = useState("");
   const [submittingNote, setSubmittingNote] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("officerUser");
@@ -171,8 +192,14 @@ export default function ReportDetailPage() {
     const fetchReport = async () => {
       try {
         setLoading(true);
+        const token = localStorage.getItem("officerToken") || "";
         const response = await fetch(
-          `http://localhost:4000/api/reports/${reportId}`
+          `http://localhost:4000/api/reports/${reportId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
 
         if (!response.ok) {
@@ -200,25 +227,122 @@ export default function ReportDetailPage() {
     fetchReport();
   }, [user, reportId]);
 
+  // Fetch on-duty officers (only when modal is open)
+  const {
+    data: officersResponse,
+    isLoading: officersLoading,
+    error: officersError,
+  } = useQuery<{ success: boolean; officers: Officer[]; count: number }>({
+    queryKey: ["available-officers", assignModalOpen],
+    queryFn: async () => {
+      const token = localStorage.getItem("officerToken") || "";
+      const res = await fetch("http://localhost:4000/api/officers/on-duty", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("Fetch officers failed:", res.status, errText);
+        throw new Error(`Failed to fetch officers: ${res.status} - ${errText}`);
+      }
+
+      const body = await res.json();
+      console.log("[DEBUG] Officers API response:", body); // Debug log
+
+      if (!body.success) {
+        throw new Error(body.error || "API returned failure");
+      }
+
+      return body;
+    },
+    enabled: assignModalOpen && !!user,
+    retry: 1,
+  });
+
+  // Extract and sort officers safely
+  const officersData = officersResponse?.officers || [];
+  const sortedOfficers = [...officersData].sort((a, b) => {
+    if (a.activeCaseCount !== b.activeCaseCount) {
+      return a.activeCaseCount - b.activeCaseCount;
+    }
+    return b.reputation.rating - a.reputation.rating;
+  });
+
+  // Mutation to update report status (approve/reject)
+  const updateStatusMutation = useMutation({
+    mutationFn: async (newStatus: string) => {
+      const token = localStorage.getItem("officerToken") || "";
+      const res = await fetch(`http://localhost:4000/api/reports/${reportId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setReport(data.report);
+    },
+  });
+
+  // Mutation to assign/reassign officer
+  const assignOfficerMutation = useMutation({
+    mutationFn: async (officerId: string) => {
+      const token = localStorage.getItem("officerToken") || "";
+      const res = await fetch("http://localhost:4000/api/assignments/manual", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reportId, officerId }),
+      });
+      if (!res.ok) throw new Error("Failed to assign officer");
+      return res.json();
+    },
+    onSuccess: () => {
+      // Refetch report to show updated assigned officer
+      fetch(`http://localhost:4000/api/reports/${reportId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("officerToken") || ""}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.report) setReport(data.report);
+        });
+      setAssignModalOpen(false);
+    },
+  });
+
   const handleAddNote = async () => {
     if (!noteText.trim() || !report) return;
 
     try {
       setSubmittingNote(true);
+      const token = localStorage.getItem("officerToken") || "";
       const response = await fetch(
         `http://localhost:4000/api/reports/${report.id}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ notes: noteText }),
         }
       );
 
       if (response.ok) {
         setNoteText("");
-        // Refresh report data
         const updatedResponse = await fetch(
-          `http://localhost:4000/api/reports/${report.id}`
+          `http://localhost:4000/api/reports/${report.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await updatedResponse.json();
         if (data.success && data.report) {
@@ -232,37 +356,10 @@ export default function ReportDetailPage() {
     }
   };
 
-  const handleStatusUpdate = async (newStatus: string) => {
-    if (!report) return;
-
-    try {
-      setUpdatingStatus(true);
-      const response = await fetch(
-        `http://localhost:4000/api/reports/${report.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
-
-      if (response.ok) {
-        const updatedResponse = await fetch(
-          `http://localhost:4000/api/reports/${report.id}`
-        );
-        const data = await updatedResponse.json();
-        if (data.success && data.report) {
-          setReport(data.report);
-        }
-      }
-    } catch (err) {
-      console.error("Error updating status:", err);
-    } finally {
-      setUpdatingStatus(false);
-    }
-  };
-
   if (!user) return null;
+
+  const isPending = ["NEW", "PENDING_REVIEW"].includes(report?.status || "");
+  const hasAssigned = !!report?.assignedOfficerId;
 
   return (
     <div className="flex h-screen bg-background">
@@ -297,6 +394,7 @@ export default function ReportDetailPage() {
 
             {!loading && !error && report && (
               <div className="space-y-6 max-w-4xl">
+                {/* Report Header */}
                 <Card className="border-0 shadow-sm">
                   <CardHeader className="pb-4 border-b">
                     <div className="flex items-start justify-between gap-4">
@@ -305,21 +403,12 @@ export default function ReportDetailPage() {
                           Case {report.caseNumber}
                         </p>
                         <h1 className="text-3xl font-bold">{report.title}</h1>
-                        <p className="text-base font-semibold text-primary mt-2">
-                          {report.crimeType.name}
-                        </p>
                       </div>
                       <div className="flex gap-2 flex-wrap justify-end">
-                        <Badge
-                          variant={getStatusColor(report.status)}
-                          className="text-sm"
-                        >
+                        <Badge variant={getStatusColor(report.status)}>
                           {report.status}
                         </Badge>
-                        <Badge
-                          variant={getPriorityColor(report.priority)}
-                          className="text-sm"
-                        >
+                        <Badge variant={getPriorityColor(report.priority)}>
                           {report.priority}
                         </Badge>
                       </div>
@@ -327,13 +416,13 @@ export default function ReportDetailPage() {
                   </CardHeader>
                 </Card>
 
+                {/* Case Overview */}
                 <Card className="border-0 shadow-sm">
                   <CardHeader className="pb-4 border-b">
                     <CardTitle className="text-lg">Case Overview</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Location */}
                       <div className="flex gap-3">
                         <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                         <div>
@@ -342,13 +431,14 @@ export default function ReportDetailPage() {
                           </p>
                           <p className="text-sm">
                             {report.location
-                              ? `${report.location.city}, ${report.location.subCity}`
+                              ? `${report.location.city}, ${
+                                  report.location.subCity || "N/A"
+                                }`
                               : "Not specified"}
                           </p>
                         </div>
                       </div>
 
-                      {/* Date & Time */}
                       <div className="flex gap-3">
                         <Calendar className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                         <div>
@@ -364,7 +454,6 @@ export default function ReportDetailPage() {
                         </div>
                       </div>
 
-                      {/* Reporter */}
                       <div className="flex gap-3">
                         <User className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                         <div>
@@ -379,7 +468,6 @@ export default function ReportDetailPage() {
                         </div>
                       </div>
 
-                      {/* Contact */}
                       <div className="flex gap-3">
                         <Phone className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                         <div>
@@ -397,26 +485,28 @@ export default function ReportDetailPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-b shadow-sm">
-                  <CardHeader className="">
+                {/* Incident Description */}
+                <Card className="border-0 shadow-sm">
+                  <CardHeader className="pb-4 border-b">
                     <CardTitle className="text-lg">
                       Incident Description
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="">
+                  <CardContent className="pt-6">
                     <p className="text-sm leading-relaxed">
                       {report.description}
                     </p>
                   </CardContent>
                 </Card>
 
-                <Card className="border-b shadow-sm">
-                  <CardHeader className="">
+                {/* Suspect Information */}
+                <Card className="border-0 shadow-sm">
+                  <CardHeader className="pb-4 border-b">
                     <CardTitle className="text-lg">
                       Suspect Information
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="">
+                  <CardContent className="pt-6">
                     <p className="text-sm leading-relaxed">
                       {report.aiSummary ||
                         "No suspect information available at this time. Investigation in progress."}
@@ -424,11 +514,12 @@ export default function ReportDetailPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-b shadow-sm">
-                  <CardHeader className="">
+                {/* Witnesses */}
+                <Card className="border-0 shadow-sm">
+                  <CardHeader className="pb-4 border-b">
                     <CardTitle className="text-lg">Witnesses</CardTitle>
                   </CardHeader>
-                  <CardContent className="">
+                  <CardContent className="pt-6">
                     <p className="text-sm leading-relaxed">
                       Witness information will be updated as the investigation
                       progresses.
@@ -436,7 +527,8 @@ export default function ReportDetailPage() {
                   </CardContent>
                 </Card>
 
-                {report.evidence && report.evidence.length > 0 && (
+                {/* Evidence */}
+                {report.evidence?.length > 0 && (
                   <Card className="border-0 shadow-sm">
                     <CardHeader className="pb-4 border-b">
                       <CardTitle className="text-lg">Evidence Files</CardTitle>
@@ -450,7 +542,8 @@ export default function ReportDetailPage() {
                           >
                             <div className="flex-1">
                               <p className="text-sm font-semibold">
-                                {file.publicId.split("/").pop()}
+                                {file.publicId.split("/").pop() ||
+                                  "Evidence file"}
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
                                 {file.type} • {formatFileSize(file.sizeBytes)}
@@ -479,6 +572,7 @@ export default function ReportDetailPage() {
                   </Card>
                 )}
 
+                {/* Add Note */}
                 <Card className="border-0 shadow-sm">
                   <CardHeader className="pb-4 border-b">
                     <CardTitle className="text-lg">
@@ -512,14 +606,47 @@ export default function ReportDetailPage() {
             )}
           </div>
 
-          <div className="w-full mt-20 flex flex-col gap-0">
+          {/* Sidebar – Actions & Timeline */}
+          <div className="w-full mt-20 flex flex-col gap-6">
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-4 border-b">
                 <CardTitle className="text-lg">Actions</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
-                  {/* Update Status Button */}
+                <div className="grid grid-cols-1 gap-3">
+                  {/* Approve/Reject */}
+                  {(report?.status === "NEW" ||
+                    report?.status === "PENDING_REVIEW") && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full bg-transparent"
+                        >
+                          Approve/Reject{" "}
+                          <ChevronDown className="w-4 h-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-40">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            updateStatusMutation.mutate("APPROVED")
+                          }
+                        >
+                          Approve
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            updateStatusMutation.mutate("REJECTED")
+                          }
+                        >
+                          Reject
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+
+                  {/* Update Status */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -534,7 +661,7 @@ export default function ReportDetailPage() {
                           </>
                         ) : (
                           <>
-                            Update Status
+                            Update Status{" "}
                             <ChevronDown className="w-4 h-4 ml-2" />
                           </>
                         )}
@@ -542,29 +669,125 @@ export default function ReportDetailPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-40">
                       <DropdownMenuItem
-                        onClick={() => handleStatusUpdate("NEW")}
+                        onClick={() => updateStatusMutation.mutate("NEW")}
                       >
                         NEW
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleStatusUpdate("IN_PROGRESS")}
+                        onClick={() =>
+                          updateStatusMutation.mutate("IN_PROGRESS")
+                        }
                       >
                         IN_PROGRESS
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleStatusUpdate("RESOLVED")}
+                        onClick={() => updateStatusMutation.mutate("RESOLVED")}
                       >
                         RESOLVED
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleStatusUpdate("CLOSED")}
+                        onClick={() => updateStatusMutation.mutate("CLOSED")}
                       >
                         CLOSED
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {/* View on Map Button */}
+                  {/* Assign/Reassign Officer */}
+                  <Dialog
+                    open={assignModalOpen}
+                    onOpenChange={setAssignModalOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full bg-transparent"
+                      >
+                        {hasAssigned ? "Reassign Officer" : "Assign Officer"}
+                      </Button>
+                    </DialogTrigger>
+
+                    <DialogContent className="max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>
+                          {hasAssigned ? "Reassign Officer" : "Assign Officer"}
+                        </DialogTitle>
+                        {hasAssigned && report?.assignedOfficer && (
+                          <DialogDescription>
+                            Currently assigned to:{" "}
+                            <strong>
+                              {report.assignedOfficer.user.fullName}
+                            </strong>
+                          </DialogDescription>
+                        )}
+                      </DialogHeader>
+
+                      <div className="max-h-96 overflow-y-auto">
+                        {officersLoading ? (
+                          <div className="flex justify-center py-4">
+                            <Loader2 className="animate-spin h-6 w-6" />
+                          </div>
+                        ) : officersError ? (
+                          <p className="text-center py-4 text-destructive">
+                            Error loading officers: {officersError.message}
+                          </p>
+                        ) : sortedOfficers.length === 0 ? (
+                          <p className="text-center py-4 text-muted-foreground">
+                            No on-duty officers available
+                          </p>
+                        ) : (
+                          sortedOfficers.map((officer) => (
+                            <div
+                              key={officer.id}
+                              className={`p-4 border-b flex justify-between items-center cursor-pointer hover:bg-muted ${
+                                report?.assignedOfficerId === officer.id
+                                  ? "bg-blue-50 border-blue-300"
+                                  : ""
+                              }`}
+                              onClick={() =>
+                                assignOfficerMutation.mutate(officer.id)
+                              }
+                            >
+                              <div>
+                                <p className="font-semibold">
+                                  {officer.user.fullName}
+                                  {report?.assignedOfficerId === officer.id && (
+                                    <Badge
+                                      variant="outline"
+                                      className="ml-2 text-xs"
+                                    >
+                                      Current
+                                    </Badge>
+                                  )}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Cases: {officer.activeCaseCount} | Rating:{" "}
+                                  {officer.reputation.rating}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={assignOfficerMutation.isPending}
+                              >
+                                {report?.assignedOfficerId === officer.id
+                                  ? "Reassign"
+                                  : "Assign"}
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {assignOfficerMutation.isPending && (
+                        <div className="flex justify-center py-2">
+                          <Loader2 className="animate-spin h-5 w-5" />
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* View on Map */}
                   <Button
                     variant="outline"
                     className="w-full bg-transparent"
@@ -578,7 +801,7 @@ export default function ReportDetailPage() {
                     View on Map
                   </Button>
 
-                  {/* Generate Report Button */}
+                  {/* Generate Report */}
                   <Button
                     variant="outline"
                     className="w-full bg-transparent"
@@ -590,6 +813,7 @@ export default function ReportDetailPage() {
               </CardContent>
             </Card>
 
+            {/* Case Timeline */}
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-4 border-b">
                 <CardTitle className="text-lg">Case Timeline</CardTitle>
@@ -643,7 +867,7 @@ export default function ReportDetailPage() {
                             Assigned to Officer
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {report.assignedOfficer?.user?.fullName ??
+                            {report.assignedOfficer?.user?.fullName ||
                               "Unassigned"}
                           </p>
                         </div>

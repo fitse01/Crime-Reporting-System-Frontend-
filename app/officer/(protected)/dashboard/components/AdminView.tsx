@@ -533,7 +533,8 @@ export default function AdminView() {
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-4 w-4" />
-                          {case_.assignedOfficer.user.fullName}
+                          {case_.assignedOfficer?.user?.fullName ??
+                            "Not Assigned"}
                         </div>
                       </div>
                     </div>

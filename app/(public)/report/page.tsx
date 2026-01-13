@@ -190,7 +190,7 @@ export default function ReportPage() {
                   size="lg"
                   className="flex-1 bg-cyan-500 hover:bg-cyan-600"
                   onClick={() =>
-                    (window.location.href = `/report/track/${caseNumber}`)
+                    (window.location.href = `/track/${caseNumber}`)
                   }
                 >
                   Track This Report

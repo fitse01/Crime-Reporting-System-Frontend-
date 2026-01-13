@@ -591,44 +591,91 @@
 //     </main>
 //   );
 // }
-
 "use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { getUser } from "@/lib/auth";
 import { Loader2 } from "lucide-react";
+import { io } from "socket.io-client";
+import { toast } from "sonner";
 
 // Components
 import AdminView from "./components/AdminView";
-import OfficerView from "./components/OfficerView"; // We'll create this next
-import OperatorView from "./components/OperatorView"; // We'll create this next
+import OfficerView from "./components/OfficerView";
+import OperatorView from "./components/OperatorView";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
 
+  // ────────────────────────────────────────────────
+  // ALL HOOKS FIRST – never put returns above this
+  // ────────────────────────────────────────────────
+
+  // 1. Auth check & user load
   useEffect(() => {
     const auth = getUser();
     if (!auth) {
-      router.push("/officer/login");
+      router.replace("/officer/login");
     } else {
       setUser(auth);
     }
   }, [router]);
 
-  const { data: reportsData, isLoading } = useQuery({
+  // 2. Reports query
+  const { data: reportsData, isLoading: reportsLoading } = useQuery({
     queryKey: ["reports"],
     queryFn: async () => {
       const token = localStorage.getItem("officerToken");
       const res = await fetch("http://localhost:4000/api/reports", {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) throw new Error("Failed to fetch reports");
       return res.json();
     },
+    enabled: !!user, // Only fetch when user is loaded
   });
 
-  if (isLoading || !user) {
+  // 3. Socket.io setup – only when user exists
+  // e.g., in DashboardPage.tsx or a layout component
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const socket = io("http://localhost:4000", {
+      auth: {
+        token: localStorage.getItem("officerToken"), // Optional: auth with token
+      },
+    });
+
+    socket.on("connect", () => {
+      console.log("Socket connected!");
+      socket.emit("joinRoom", `user_${user.id}`);
+    });
+
+    socket.on("new-notification", (notification) => {
+      console.log("Realtime notification received:", notification);
+      toast.success(notification.title, {
+        description: notification.body,
+        duration: 8000,
+      });
+      // Optional: refetch notifications or increment unread count in UI
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err.message);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user?.id]);
+  // ────────────────────────────────────────────────
+  // Now safe to early return (after all hooks)
+  // ────────────────────────────────────────────────
+
+  if (reportsLoading || !user) {
     return (
       <div className="h-screen flex items-center justify-center">
         <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
@@ -637,20 +684,17 @@ export default function DashboardPage() {
   }
 
   const reports = reportsData?.reports || [];
-  const officerName = user.fullName || `Officer ${user.badgeId}`;
+  const officerName = user.fullName || `Officer ${user.badgeId || "Unknown"}`;
 
-  // THE LOGIC
+  // Render role-based views
   return (
     <main>
-      {/* 1. Both Admins get your exact original view */}
       {(user.role === "SUPER_ADMIN" || user.role === "ADMIN") && (
         <AdminView reports={reports} officerName={officerName} />
       )}
 
-      {/* 2. Officers get a personal task-focused view */}
       {user.role === "OFFICER" && <OfficerView reports={reports} user={user} />}
 
-      {/* 3. Operators get a dispatch/queue focused view */}
       {user.role === "OPERATOR" && (
         <OperatorView reports={reports} user={user} />
       )}

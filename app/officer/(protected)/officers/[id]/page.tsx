@@ -516,7 +516,9 @@ export default function OfficerDetailPage() {
                         <div className="flex gap-6 text-xs text-muted-foreground border-t pt-3">
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />{" "}
-                            {assignment.distanceKm.toFixed(1)} km away
+                            {assignment.distanceKm != null
+                              ? `${assignment.distanceKm.toFixed(1)} km away`
+                              : "Distance not calculated"}
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" /> Assigned:{" "}

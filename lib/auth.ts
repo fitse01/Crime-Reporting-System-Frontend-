@@ -89,6 +89,7 @@
 // lib/auth.ts - FINAL FIXED VERSION
 
 export interface OfficerUser {
+    badgeId: string | null;
     id: string;
     email: string;
     fullName: string;
@@ -152,6 +153,7 @@ export function saveAuthData(
     const fullUser: OfficerUser = {
         ...userData,
         token,
+        badgeId: null
     };
 
     localStorage.setItem("officerToken", token);
