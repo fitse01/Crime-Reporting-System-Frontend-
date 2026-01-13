@@ -36,6 +36,14 @@ const reportSchema = z.object({
   reporterPhone: z.string().optional(),
   reporterEmail: z.string().email("Invalid email").optional().or(z.literal("")),
   isAnonymous: z.boolean(),
+
+  // 👇 NEW
+  acknowledgeLegalNotice: z.literal(true, {
+    errorMap: () => ({
+      message:
+        "You must acknowledge that submitting false reports has legal consequences.",
+    }),
+  }),
 });
 
 type ReportFormData = z.infer<typeof reportSchema>;
@@ -519,6 +527,48 @@ export default function ReportPage() {
                     </p>
                   </div>
                 </div>
+                {/* Legal Notice */}
+                <div className="p-6 bg-red-50 border border-red-300 rounded-xl">
+                  <div className="flex items-start gap-4">
+                    <AlertTriangle className="h-6 w-6 text-red-600 mt-1" />
+                    <div className="space-y-2">
+                      <p className="font-semibold text-red-800">
+                        Legal Notice – False Reporting
+                      </p>
+                      <p className="text-sm text-red-700 leading-relaxed">
+                        Submitting a false or misleading crime report is a
+                        serious offense and may result in legal consequences
+                        under applicable law. Please ensure that all information
+                        provided is truthful and accurate to the best of your
+                        knowledge.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Legal Acknowledgement */}
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="acknowledgeLegalNotice"
+                    className="mt-1 h-5 w-5"
+                    {...register("acknowledgeLegalNotice")}
+                  />
+                  <Label
+                    htmlFor="acknowledgeLegalNotice"
+                    className="text-sm leading-relaxed cursor-pointer"
+                  >
+                    I confirm that the information provided is truthful and I
+                    understand that submitting a false report may result in
+                    legal consequences.
+                  </Label>
+                </div>
+
+                {errors.acknowledgeLegalNotice && (
+                  <p className="text-sm text-red-600">
+                    {errors.acknowledgeLegalNotice.message}
+                  </p>
+                )}
 
                 {/* Final Buttons */}
                 <div className="flex gap-6 pt-8">

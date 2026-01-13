@@ -616,6 +616,10 @@ export default function CasetDetailPage() {
   // Mutation to assign/reassign officer
   const assignOfficerMutation = useMutation({
     mutationFn: async (officerId: string) => {
+      console.log("[DEBUG] Assigning officer payload:", {
+        reportId,
+        officerId,
+      });
       const token = localStorage.getItem("officerToken") || "";
       const res = await fetch("http://localhost:4000/api/assignments/manual", {
         method: "POST",
