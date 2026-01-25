@@ -34,8 +34,20 @@ import {
   Eye,
   ChevronDown,
 } from "lucide-react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DialogTrigger } from "@radix-ui/react-dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface CrimeType {
   id: number;
@@ -163,19 +175,42 @@ const ReportDetailSkeleton = () => (
   </div>
 );
 
+const investigationSchema = z.object({
+  status: z.enum(["NEW", "PENDING_REVIEW", "IN_PROGRESS", "RESOLVED", "CLOSED", "REJECTED"]),
+  note: z.string().min(10, "Investigation note must be at least 10 characters"),
+  decisionComment: z.string().optional(),
+});
+
+type InvestigationFormData = z.infer<typeof investigationSchema>;
+
 export default function ReportDetailPage() {
   const router = useRouter();
   const params = useParams();
   const reportId = params.id as string;
+  const queryClient = useQueryClient();
 
   const [user, setUser] = useState<any>(null);
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [noteText, setNoteText] = useState("");
-  const [submittingNote, setSubmittingNote] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<InvestigationFormData>({
+    resolver: zodResolver(investigationSchema),
+    defaultValues: {
+      status: "IN_PROGRESS",
+      note: "",
+      decisionComment: "",
+    },
+  });
 
   useEffect(() => {
     const storedUser = localStorage.getItem("officerUser");
@@ -226,6 +261,14 @@ export default function ReportDetailPage() {
 
     fetchReport();
   }, [user, reportId]);
+
+  // Set default status when report loads
+  useEffect(() => {
+    if (report) {
+      // safe cast or validate status matches enum
+      setValue("status", report.status as any);
+    }
+  }, [report, setValue]);
 
   // Fetch on-duty officers (only when modal is open)
   const {
@@ -320,39 +363,39 @@ export default function ReportDetailPage() {
     },
   });
 
-  const handleAddNote = async () => {
-    if (!noteText.trim() || !report) return;
+  const onSubmitInvestigation = async (data: InvestigationFormData) => {
+    if (!report) return;
 
     try {
-      setSubmittingNote(true);
       const token = localStorage.getItem("officerToken") || "";
       const response = await fetch(
-        `http://localhost:4000/api/reports/${report.id}`,
+        `http://localhost:4000/api/reports/${report.id}/investigation`,
         {
-          method: "PATCH",
+          method: "PATCH", // Using PATCH as per plan (or POST if preferred)
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ notes: noteText }),
+          body: JSON.stringify(data),
         }
       );
 
-      if (response.ok) {
-        setNoteText("");
-        const updatedResponse = await fetch(
-          `http://localhost:4000/api/reports/${report.id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const data = await updatedResponse.json();
-        if (data.success && data.report) {
-          setReport(data.report);
-        }
+      if (!response.ok) throw new Error("Failed to submit investigation result");
+
+      const result = await response.json();
+      
+      toast.success("Investigation updated successfully");
+      reset(); // clear form
+      
+      // Update local state or invalidate query
+      if (result.report) {
+        setReport(result.report);
       }
+      queryClient.invalidateQueries({ queryKey: ["report", reportId] });
+      
     } catch (err) {
-      console.error("Error adding note:", err);
-    } finally {
-      setSubmittingNote(false);
+      console.error("Error submitting investigation:", err);
+      toast.error("Failed to submit investigation result");
     }
   };
 
@@ -429,13 +472,19 @@ export default function ReportDetailPage() {
                           <p className="text-xs font-semibold text-muted-foreground mb-1">
                             Location
                           </p>
-                          <p className="text-sm">
-                            {report.location
-                              ? `${report.location.city}, ${
-                                  report.location.subCity || "N/A"
-                                }`
-                              : "Not specified"}
+                          <p className="text-sm font-medium">
+                            {/* Extract plain text location from description if present */}
+                            {report.description.startsWith("Location:") 
+                              ? report.description.split("\n\n")[0].replace("Location: ", "")
+                              : report.location
+                                ? `${report.location.city}, ${report.location.subCity || ""}`
+                                : "No location specified"}
                           </p>
+                          {(report.lat && report.lng) && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Coordinates: {report.lat.toFixed(4)}, {report.lng.toFixed(4)}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -460,27 +509,31 @@ export default function ReportDetailPage() {
                           <p className="text-xs font-semibold text-muted-foreground mb-1">
                             Reporter
                           </p>
-                          <p className="text-sm">
-                            {report.isAnonymous
-                              ? "Anonymous"
-                              : report.reporterName || "Not provided"}
-                          </p>
+                          {report.isAnonymous ? (
+                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                              Anonymous Reporter
+                            </Badge>
+                          ) : (
+                            <div className="space-y-1">
+                              <p className="text-sm font-medium">{report.reporterName || "Name not provided"}</p>
+                              {report.reporterPhone && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Phone className="w-3 h-3" />
+                                  {report.reporterPhone}
+                                </div>
+                              )}
+                              {report.reporterEmail && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span className="w-3 h-3 flex items-center justify-center">@</span>
+                                  {report.reporterEmail}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      <div className="flex gap-3">
-                        <Phone className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-1">
-                            Contact
-                          </p>
-                          <p className="text-sm">
-                            {report.reporterPhone ||
-                              report.reporterEmail ||
-                              "Not provided"}
-                          </p>
-                        </div>
-                      </div>
+                      
+                      {/* Hide separate Contact section since it's merged above */}
                     </div>
                   </CardContent>
                 </Card>
@@ -572,34 +625,79 @@ export default function ReportDetailPage() {
                   </Card>
                 )}
 
-                {/* Add Note */}
-                <Card className="border-0 shadow-sm">
-                  <CardHeader className="pb-4 border-b">
-                    <CardTitle className="text-lg">
-                      Add Investigation Note
+                {/* Investigation Result Form */}
+                <Card className="border-0 shadow-sm ring-1 ring-border/50">
+                  <CardHeader className="pb-4 border-b bg-slate-50/50">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                       Investigation Result
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-6 space-y-4">
-                    <Textarea
-                      placeholder="Add your investigation notes here..."
-                      value={noteText}
-                      onChange={(e) => setNoteText(e.target.value)}
-                      className="min-h-24 resize-none"
-                    />
-                    <Button
-                      onClick={handleAddNote}
-                      disabled={submittingNote || !noteText.trim()}
-                      className="w-full"
-                    >
-                      {submittingNote ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Adding Note...
-                        </>
-                      ) : (
-                        "Add Note"
-                      )}
-                    </Button>
+                  <CardContent className="pt-6">
+                    <form onSubmit={handleSubmit(onSubmitInvestigation)} className="space-y-6">
+                      
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground">
+                            Update Status
+                          </label>
+                          <Select 
+                            onValueChange={(val) => setValue("status", val as any)}
+                            defaultValue={report.status}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select outcome" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                              <SelectItem value="RESOLVED">Resolved</SelectItem>
+                              <SelectItem value="CLOSED">Closed (No Further Action)</SelectItem>
+                              <SelectItem value="REJECTED">Rejected (False Report)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">
+                          Investigation Note / Summary *
+                        </label>
+                        <Textarea
+                          placeholder="Detailed notes on findings, actions taken, and final conclusion..."
+                          className="min-h-32 resize-y"
+                          {...register("note")}
+                        />
+                        {errors.note && (
+                          <p className="text-xs text-red-600">{errors.note.message}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">
+                          Internal Decision Comment (Optional)
+                        </label>
+                        <Input
+                          placeholder="Private remark for supervisors..."
+                          {...register("decisionComment")}
+                        />
+                      </div>
+
+                      <div className="flex justify-end pt-2">
+                        <Button 
+                          type="submit" 
+                          disabled={isSubmitting}
+                          className="w-full md:w-auto min-w-[140px]"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Submitting...
+                            </>
+                          ) : (
+                            "Submit Result"
+                          )}
+                        </Button>
+                      </div>
+                    </form>
                   </CardContent>
                 </Card>
               </div>

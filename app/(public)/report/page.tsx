@@ -24,27 +24,62 @@ import {
   LocateFixed,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 // Schema
-const reportSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().min(20, "Description must be at least 20 characters"),
-  crimeTypeId: z.number().min(1, "Please select a crime type"),
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
-  reporterName: z.string().optional(),
-  reporterPhone: z.string().optional(),
-  reporterEmail: z.string().email("Invalid email").optional().or(z.literal("")),
-  isAnonymous: z.boolean(),
+const reportSchema = z
+  .object({
+    title: z.string().min(5, "Title must be at least 5 characters"),
+    description: z
+      .string()
+      .min(20, "Description must be at least 20 characters"),
+    crimeTypeId: z.number().min(1, "Please select a crime type"),
+    locationString: z
+      .string()
+      .min(3, "Place description is required (min 3 chars)"),
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    reporterName: z.string().optional(),
+    reporterPhone: z.string().optional(),
+    reporterEmail: z
+      .string()
+      .email("Invalid email")
+      .optional()
+      .or(z.literal("")),
+    isAnonymous: z.boolean(),
 
-  // 👇 NEW
-  acknowledgeLegalNotice: z.literal(true, {
-    errorMap: () => ({
-      message:
-        "You must acknowledge that submitting false reports has legal consequences.",
+    acknowledgeLegalNotice: z.literal(true, {
+      errorMap: () => ({
+        message:
+          "You must acknowledge that submitting false reports has legal consequences.",
+      }),
     }),
-  }),
-});
+  })
+  .superRefine((data, ctx) => {
+    if (!data.isAnonymous) {
+      if (!data.reporterName || data.reporterName.trim().length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Name is required when not anonymous",
+          path: ["reporterName"],
+        });
+      }
+      if (!data.reporterPhone || data.reporterPhone.trim().length < 3) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Phone number is required when not anonymous",
+          path: ["reporterPhone"],
+        });
+      }
+      if (!data.reporterEmail || data.reporterEmail.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Email is required when not anonymous",
+          path: ["reporterEmail"],
+        });
+      }
+    }
+  });
 
 type ReportFormData = z.infer<typeof reportSchema>;
 
@@ -69,7 +104,12 @@ export default function ReportPage() {
     trigger,
   } = useForm<ReportFormData>({
     resolver: zodResolver(reportSchema),
-    defaultValues: { isAnonymous: true, lat: 8.5413, lng: 39.2711 },
+    defaultValues: {
+      isAnonymous: false,
+      lat: 8.5413,
+      lng: 39.2711,
+      locationString: "",
+    },
   });
 
   const isAnonymous = watch("isAnonymous");
@@ -78,7 +118,9 @@ export default function ReportPage() {
     mutationFn: async (data: ReportFormData) => {
       const formData = new FormData();
       formData.append("title", data.title);
-      formData.append("description", data.description);
+      // Prepend the plain-text location to the description
+      const fullDescription = `Location: ${data.locationString}\n\n${data.description}`;
+      formData.append("description", fullDescription);
       formData.append("crimeTypeId", data.crimeTypeId.toString());
       formData.append("lat", data.lat.toString());
       formData.append("lng", data.lng.toString());
@@ -149,7 +191,7 @@ export default function ReportPage() {
     const fields =
       step === 1
         ? (["title", "description", "crimeTypeId"] as const)
-        : (["lat", "lng"] as const);
+        : (["locationString", "lat", "lng"] as const);
     const valid = await trigger(fields);
     if (valid) setStep(step + 1);
     else toast.error("Please complete all required fields");
@@ -336,6 +378,27 @@ export default function ReportPage() {
               {/* Step 2 */}
               {step === 2 && (
                 <div className="space-y-6">
+                  {/* Plain-text Location Input */}
+                  <div className="space-y-4">
+                    <Label
+                      htmlFor="locationString"
+                      className="text-xl font-semibold"
+                    >
+                      Place where the crime happened *
+                    </Label>
+                    <Input
+                      id="locationString"
+                      placeholder="e.g., Posta Bet, Adama Boku, Near Bole Michael"
+                      className="text-lg"
+                      {...register("locationString")}
+                    />
+                    {errors.locationString && (
+                      <p className="text-sm text-red-600">
+                        {errors.locationString.message}
+                      </p>
+                    )}
+                  </div>
+
                   <Label className="text-xl font-semibold">
                     Location Coordinates *
                   </Label>
@@ -484,39 +547,73 @@ export default function ReportPage() {
                 {/* Anonymity & Contact */}
                 <div className="space-y-6 pt-6 border-t">
                   <div className="flex items-center space-x-4">
-                    <input
-                      type="checkbox"
-                      id="anonymous"
-                      className="w-6 h-6"
-                      {...register("isAnonymous")}
+                    <Switch
+                      id="isAnonymous"
+                      checked={isAnonymous}
+                      onCheckedChange={(checked) =>
+                        setValue("isAnonymous", checked)
+                      }
                     />
                     <Label
-                      htmlFor="anonymous"
+                      htmlFor="isAnonymous"
                       className="text-lg font-medium cursor-pointer"
                     >
-                      Submit anonymously (recommended)
+                      Submit this report anonymously
                     </Label>
                   </div>
 
                   {!isAnonymous && (
-                    <div className="space-y-5 p-6 bg-gray-50 rounded-xl">
-                      <Input
-                        placeholder="Your Full Name (optional)"
-                        {...register("reporterName")}
-                      />
-                      <Input
-                        placeholder="Phone Number (optional)"
-                        {...register("reporterPhone")}
-                      />
-                      <Input
-                        placeholder="Email Address (optional)"
-                        {...register("reporterEmail")}
-                      />
-                      {errors.reporterEmail && (
-                        <p className="text-sm text-red-600">
-                          {errors.reporterEmail.message}
-                        </p>
-                      )}
+                    <div className="space-y-5 p-6 bg-gray-50 rounded-xl animate-in fade-in slide-in-from-top-4 duration-300">
+                      <div>
+                        <Label htmlFor="reporterName">Full Name *</Label>
+                        <Input
+                          id="reporterName"
+                          placeholder="Your Full Name"
+                          {...register("reporterName")}
+                          className={
+                             errors.reporterName ? "border-red-500" : ""
+                          }
+                        />
+                        {errors.reporterName && (
+                          <p className="text-sm text-red-600 mt-1">
+                            {errors.reporterName.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="reporterPhone">Phone Number *</Label>
+                        <Input
+                          id="reporterPhone"
+                          placeholder="Phone Number"
+                          {...register("reporterPhone")}
+                          className={
+                             errors.reporterPhone ? "border-red-500" : ""
+                          }
+                        />
+                        {errors.reporterPhone && (
+                          <p className="text-sm text-red-600 mt-1">
+                            {errors.reporterPhone.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="reporterEmail">Email Address *</Label>
+                        <Input
+                          id="reporterEmail"
+                          placeholder="Email Address"
+                          {...register("reporterEmail")}
+                          className={
+                             errors.reporterEmail ? "border-red-500" : ""
+                          }
+                        />
+                        {errors.reporterEmail && (
+                          <p className="text-sm text-red-600 mt-1">
+                            {errors.reporterEmail.message}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
 

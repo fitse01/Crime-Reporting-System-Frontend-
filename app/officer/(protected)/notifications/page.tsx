@@ -459,6 +459,11 @@ export default function OfficerNotificationsPage() {
 
     socketIo.on("connect", () => {
       socketIo.emit("joinRoom", `user_${user.id}`);
+      
+      // Join admin room if user is admin
+      if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
+        socketIo.emit("joinRoom", "admin");
+      }
     });
 
     socketIo.on("new-notification", (notification: Notification) => {

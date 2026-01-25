@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { MapPin, AlertCircle, ChevronRight, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,6 +141,7 @@ const createCustomIcon = (priority: string) => {
 
 export function CrimeMapView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +180,35 @@ export function CrimeMapView() {
     };
 
     fetchReports();
+    fetchReports();
   }, []);
+
+  // Effect: Handle URL params for initial selection
+  useEffect(() => {
+    if (!loading && reports.length > 0) {
+      const paramLat = searchParams.get("lat");
+      const paramLng = searchParams.get("lng");
+      // const paramId = searchParams.get("reportId"); // optional if we pass ID
+
+      if (paramLat && paramLng && mapRef.current) {
+        const lat = parseFloat(paramLat);
+        const lng = parseFloat(paramLng);
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          // Find closest report or exact match
+          const targetReport = reports.find(
+            (r) => Math.abs(r.lat - lat) < 0.0001 && Math.abs(r.lng - lng) < 0.0001
+          );
+
+          mapRef.current.flyTo([lat, lng], 18, { duration: 1.5 });
+          
+          if (targetReport) {
+            setSelectedReport(targetReport);
+          }
+        }
+      }
+    }
+  }, [loading, reports, searchParams]);
 
   const handleReportClick = useCallback(
     (report: Report) => {

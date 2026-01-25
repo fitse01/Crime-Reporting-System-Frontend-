@@ -106,7 +106,7 @@ export function ReportForm({ report, onSuccess, onCancel }: ReportFormProps) {
     },
     onSuccess: () => {
       toast.success(
-        report ? "Report updated successfully" : "Report created successfully"
+        report ? "Report updated successfully" : "Report created successfully",
       );
       onSuccess();
     },
@@ -141,7 +141,7 @@ export function ReportForm({ report, onSuccess, onCancel }: ReportFormProps) {
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
-          <div>
+          {/* <div>
             <Label htmlFor="crimeTypeId">Crime Type</Label>
             <Select
               onValueChange={(value) => setValue("crimeTypeId", value)}
@@ -160,6 +160,33 @@ export function ReportForm({ report, onSuccess, onCancel }: ReportFormProps) {
             </Select>
             {errors.crimeTypeId && (
               <p className="text-sm text-red-600 mt-1">
+                {errors.crimeTypeId.message}
+              </p>
+            )}
+          </div> */}
+          <div className="space-y-4">
+            <Label htmlFor="crimeTypeId" className="text-lg">
+              Crime Type *
+            </Label>
+            <select
+              id="crimeTypeId"
+              className="w-full h-12 px-4 py-3 border rounded-lg text-base bg-white focus:ring-2 focus:ring-blue-900"
+              {...register("crimeTypeId", { valueAsNumber: true })}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select crime type
+              </option>
+              <option>Theft</option>
+              <option>Assault</option>
+              <option>Burglary</option>
+              <option>Fraud</option>
+              <option>Vandalism</option>
+              <option>Drug-related</option>
+              <option>Other</option>
+            </select>
+            {errors.crimeTypeId && (
+              <p className="text-sm text-red-600">
                 {errors.crimeTypeId.message}
               </p>
             )}

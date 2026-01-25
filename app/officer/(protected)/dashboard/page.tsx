@@ -652,6 +652,11 @@ export default function DashboardPage() {
     socket.on("connect", () => {
       console.log("Socket connected!");
       socket.emit("joinRoom", `user_${user.id}`);
+      
+      // Join admin room if applicable
+      if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
+        socket.emit("joinRoom", "admin");
+      }
     });
 
     socket.on("new-notification", (notification) => {
