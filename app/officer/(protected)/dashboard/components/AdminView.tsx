@@ -233,7 +233,7 @@ import {
   MessageSquare,
   Loader2,
 } from "lucide-react";
-import { format, isToday } from "date-fns";
+import { format, isToday, formatDistanceToNow } from "date-fns";
 import { getUser } from "@/lib/auth";
 
 interface Report {
@@ -361,27 +361,20 @@ export default function AdminView() {
     )
     .slice(0, 4);
 
-  // Example notifications (add real fetch if needed)
-  const notifications = [
-    {
-      id: 1,
-      message: "New high-priority theft reported in Central District",
-      time: "2 hours ago",
-      unread: true,
+  // Fetch notifications for Admin View
+  const { data: notificationsData } = useQuery({
+    queryKey: ["notifications", "admin-view"],
+    queryFn: async () => {
+      const token = localStorage.getItem("officerToken");
+      const res = await fetch("http://localhost:4000/api/notifications?limit=5", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return { notifications: [] };
+      return res.json();
     },
-    {
-      id: 2,
-      message: "Case RPT-12345678 requires immediate review",
-      time: "4 hours ago",
-      unread: false,
-    },
-    {
-      id: 3,
-      message: "System maintenance scheduled for tomorrow",
-      time: "1 day ago",
-      unread: false,
-    },
-  ];
+  });
+
+  const notifications = notificationsData?.notifications || [];
 
   // Performance metrics (calculated from data)
   const totalCases = reports.length;
@@ -391,7 +384,9 @@ export default function AdminView() {
   const resolutionRate =
     totalCases > 0 ? Math.round((resolvedCases / totalCases) * 100) : 0;
 
-  const averageResponseTime = "15 min"; // Placeholder - calculate from data if timestamps available
+  // Simple average response time calc (placeholder logic until DB supported)
+  // In a real app, diff `createdAt` vs `updatedAt` for resolved cases
+  const averageResponseTime = "12h 30m"; 
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -566,7 +561,7 @@ export default function AdminView() {
                   View All Reports
                 </Button>
               </Link>
-              <Link href="/officer/map">
+              <Link href="/officer/map-two">
                 <Button
                   variant="outline"
                   className="w-full justify-start bg-transparent"
@@ -611,20 +606,23 @@ export default function AdminView() {
               <CardTitle>Recent Notifications</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {notifications.map((notif) => (
+              {notifications.map((notif: any) => (
                 <div key={notif.id} className="flex items-start gap-3">
                   <Bell className="h-4 w-4 text-muted-foreground mt-1" />
                   <div>
-                    <p className="text-sm">{notif.message}</p>
+                    <p className="text-sm">{notif.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {notif.time}
+                      {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
                     </p>
                   </div>
-                  {notif.unread && (
+                  {!notif.isRead && (
                     <div className="h-2 w-2 rounded-full bg-blue-600" />
                   )}
                 </div>
               ))}
+              {notifications.length === 0 && (
+                <p className="text-sm text-muted-foreground">No recent notifications.</p>
+              )}
               <Link href="/officer/notifications">
                 <Button variant="link" className="w-full justify-center">
                   View All Notifications
@@ -637,7 +635,7 @@ export default function AdminView() {
           <Card>
             <CardHeader>
               <CardTitle>Performance</CardTitle>
-              <CardDescription>This month</CardDescription>
+              <CardDescription>System Metrics</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -656,14 +654,14 @@ export default function AdminView() {
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm">Average Response Time</span>
+                  <span className="text-sm">Response Time (Est.)</span>
                   <span className="text-sm font-semibold text-green-600">
                     {averageResponseTime}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <TrendingUp className="h-3 w-3 text-green-600" />
-                  15% faster than last month
+                  Consistent performance
                 </div>
               </div>
               <div className="pt-4 border-t">
@@ -678,13 +676,6 @@ export default function AdminView() {
                   }{" "}
                   new today
                 </div>
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm">Open Messages</span>
-                <span className="text-sm font-semibold">8</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <MessageSquare className="h-3 w-3" />3 unread
               </div>
             </CardContent>
           </Card>

@@ -443,6 +443,39 @@ export default function ContactMessagesPage() {
     },
   });
 
+  // Reply mutation
+  const replyMutation = useMutation({
+    mutationFn: async ({ id, message }: { id: string; message: string }) => {
+      if (!token) throw new Error("No token for reply");
+
+      const response = await fetch(`http://localhost:4000/api/contact/${id}/reply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(err || "Reply failed");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contact-messages"] });
+      toast.success("Reply sent and marked as handled");
+      setIsDetailOpen(false);
+      setSelectedMessage(null);
+      setNotes("");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to send reply");
+    },
+  });
+
   // Filter messages based on tab and search
   const filteredMessages = messages.filter((msg) => {
     const matchesSearch =
@@ -799,23 +832,26 @@ export default function ContactMessagesPage() {
                     onChange={(e) => setNotes(e.target.value)}
                     rows={4}
                   />
-                  <Button
-                    onClick={handleMarkAsHandled}
-                    disabled={handleMutation.isPending}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                  >
-                    {handleMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Marking as Handled...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Mark as Handled
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        if (selectedMessage) {
+                            replyMutation.mutate({ 
+                                id: selectedMessage.id, 
+                                message: notes // Treat notes as reply body if replying
+                            });
+                        }
+                      }}
+                      disabled={!notes.trim()}
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Reply & Resolve
+                    </Button>
+                    <Button onClick={handleMarkAsHandled}>
+                      Mark as Handled
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

@@ -333,6 +333,30 @@ export default function ReportDetailPage() {
     },
   });
 
+  // Mutation to update priority (NEW)
+  const updatePriorityMutation = useMutation({
+    mutationFn: async (newPriority: string) => {
+      const token = localStorage.getItem("officerToken") || "";
+      const res = await fetch(`http://localhost:4000/api/reports/${reportId}/priority`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ priority: newPriority }),
+      });
+      if (!res.ok) throw new Error("Failed to update priority");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setReport(data.report);
+      toast.success(`Priority updated to ${data.report.priority}`);
+    },
+    onError: () => {
+        toast.error("Failed to update priority");
+    }
+  });
+
   // Mutation to assign/reassign officer
   const assignOfficerMutation = useMutation({
     mutationFn: async (officerId: string) => {
@@ -787,6 +811,41 @@ export default function ReportDetailPage() {
                         onClick={() => updateStatusMutation.mutate("CLOSED")}
                       >
                         CLOSED
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Update Priority (NEW) */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full bg-transparent"
+                      >
+                        Update Priority{" "}
+                        <ChevronDown className="w-4 h-4 ml-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-40">
+                      <DropdownMenuItem
+                        onClick={() => updatePriorityMutation.mutate("LOW")}
+                      >
+                        LOW
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updatePriorityMutation.mutate("MEDIUM")}
+                      >
+                        MEDIUM
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updatePriorityMutation.mutate("HIGH")}
+                      >
+                        HIGH
+                      </DropdownMenuItem>
+                       <DropdownMenuItem
+                        onClick={() => updatePriorityMutation.mutate("CRITICAL")}
+                      >
+                        CRITICAL
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

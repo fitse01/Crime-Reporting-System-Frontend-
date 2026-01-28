@@ -395,17 +395,22 @@ interface Notification {
 export default function OfficerNotificationsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("all"); // read/unread
+  const [typeFilter, setTypeFilter] = useState("all"); // notification type
   const [socket, setSocket] = useState<any>(null);
 
   const user = JSON.parse(localStorage.getItem("officerUser") || "{}");
   const token = localStorage.getItem("officerToken") || "";
+  const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
   // Fetch notifications
   const { data: notificationsData, isLoading } = useQuery<Notification[]>({
-    queryKey: ["notifications"],
+    queryKey: ["notifications", filter, typeFilter],
     queryFn: async () => {
-      const res = await fetch("http://localhost:4000/api/notifications", {
+      const typeQuery = typeFilter !== "all" ? `&type=${typeFilter}` : "";
+      const unreadQuery = filter === "unread" ? "&unreadOnly=true" : "";
+      
+      const res = await fetch(`http://localhost:4000/api/notifications?limit=50${typeQuery}${unreadQuery}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch notifications");
@@ -510,9 +515,12 @@ export default function OfficerNotificationsPage() {
     return icons[type] || Bell;
   };
 
-  const filteredNotifications = notifications.filter((n) => {
-    if (filter === "unread") return !n.isRead;
-    return true;
+  // Sort: Unread first, then by date (newest first)
+  const filteredNotifications = notifications.sort((a, b) => {
+    if (a.isRead === b.isRead) {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+    return a.isRead ? 1 : -1;
   });
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -573,25 +581,62 @@ export default function OfficerNotificationsPage() {
         {/* Filter Tabs */}
         <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="flex gap-3">
-              <Button
-                variant={filter === "all" ? "default" : "outline"}
-                onClick={() => setFilter("all")}
-              >
-                All
-                <Badge variant="secondary" className="ml-2">
-                  {notifications.length}
-                </Badge>
-              </Button>
-              <Button
-                variant={filter === "unread" ? "default" : "outline"}
-                onClick={() => setFilter("unread")}
-              >
-                Unread
-                <Badge variant="secondary" className="ml-2">
-                  {unreadCount}
-                </Badge>
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-between">
+              {/* Read/Unread Filter */}
+              <div className="flex gap-3">
+                <Button
+                  variant={filter === "all" ? "default" : "outline"}
+                  onClick={() => setFilter("all")}
+                >
+                  All
+                  <Badge variant="secondary" className="ml-2">
+                    {notificationsData?.length || 0}
+                  </Badge>
+                </Button>
+                <Button
+                  variant={filter === "unread" ? "default" : "outline"}
+                  onClick={() => setFilter("unread")}
+                >
+                  Unread
+                  <Badge variant="secondary" className="ml-2">
+                    {unreadCount}
+                  </Badge>
+                </Button>
+              </div>
+
+              {/* Admin Type Filter */}
+              {isAdmin && (
+                <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+                  <Button
+                    variant={typeFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTypeFilter("all")}
+                  >
+                    All Types
+                  </Button>
+                  <Button
+                    variant={typeFilter === "ASSIGNMENT" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTypeFilter("ASSIGNMENT")}
+                  >
+                    Assignments
+                  </Button>
+                  <Button
+                    variant={typeFilter === "STATUS_CHANGE" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTypeFilter("STATUS_CHANGE")}
+                  >
+                    Status
+                  </Button>
+                  <Button
+                    variant={typeFilter === "SYSTEM" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTypeFilter("SYSTEM")}
+                  >
+                    System
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -601,15 +646,19 @@ export default function OfficerNotificationsPage() {
           {filteredNotifications.map((n) => (
             <Card
               key={n.id}
-              className={`${getPriorityColor(n.priority)} ${
-                !n.isRead ? "shadow-md" : ""
+              className={`transition-colors cursor-pointer hover:bg-muted/50 ${getPriorityColor(n.priority)} ${
+                !n.isRead ? "shadow-md ring-1 ring-primary/20" : "opacity-80 bg-background/50"
               }`}
+              onClick={() => {
+                if (!n.isRead) markReadMutation.mutate(n.id);
+                if (n.reportId) router.push(`/officer/cases/${n.report?.caseNumber}`);
+              }}
             >
-              <CardContent className="p-4">
+              <CardContent className="p-4 relative group">
                 <div className="flex items-start gap-4">
                   <div
                     className={`p-2 rounded-lg ${
-                      !n.isRead ? "bg-accent/20" : "bg-muted"
+                      !n.isRead ? "bg-accent/20 text-accent-foreground" : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {(() => {
@@ -625,51 +674,58 @@ export default function OfficerNotificationsPage() {
                             className={`font-semibold ${
                               !n.isRead
                                 ? "text-foreground"
-                                : "text-muted-foreground"
+                                : "text-muted-foreground font-medium"
                             }`}
                           >
                             {n.title}
                           </h3>
                           {!n.isRead && (
-                            <div className="w-2 h-2 bg-primary rounded-full" />
+                            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className={`text-sm ${!n.isRead ? "text-foreground/90" : "text-muted-foreground"}`}>
                           {n.body}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => deleteMutation.mutate(n.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      
+                      {/* Actions - visible on hover or if important */}
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        {!n.isRead && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    markReadMutation.mutate(n.id);
+                                }}
+                                title="Mark as read"
+                            >
+                                <Check className="h-4 w-4" />
+                            </Button>
+                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                deleteMutation.mutate(n.id);
+                            }}
+                            title="Delete notification"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
+                    
                     <div className="flex items-center justify-between mt-3">
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(n.createdAt), {
                           addSuffix: true,
                         })}
                       </span>
-                      <div className="flex gap-3">
-                        {!n.isRead && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => markReadMutation.mutate(n.id)}
-                          >
-                            <Check className="mr-1 h-3 w-3" />
-                            Mark Read
-                          </Button>
-                        )}
-                        {n.reportId && (
-                          <Link href={`/officer/cases/${n.report?.caseNumber}`}>
-                            <Button size="sm">View Case</Button>
-                          </Link>
-                        )}
-                      </div>
+                      {/* Optional extra actions if needed */}
                     </div>
                   </div>
                 </div>

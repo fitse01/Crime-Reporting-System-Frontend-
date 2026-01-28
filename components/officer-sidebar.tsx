@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getUser, getUserInitials, logout, type OfficerUser } from "@/lib/auth";
 import { toast } from "sonner";
+import { NotificationBadge } from "@/components/ui/notification-badge"; // ← ADD THIS
 
 // 1. Define allowed roles for each link
 const navLinks = [
@@ -158,7 +159,13 @@ export function OfficerSidebar() {
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
-                {!collapsed && <span className="text-base">{link.label}</span>}
+                {!collapsed && (
+                    <span className="text-base w-full flex items-center justify-between">
+                        {link.label}
+                        {link.label === "Notifications" && <NotificationBadge />}
+                    </span>
+                )}
+                {/* Show dot if collapsed? Optional UX choice */}
               </Button>
             </Link>
           );
