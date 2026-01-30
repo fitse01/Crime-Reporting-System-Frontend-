@@ -82,7 +82,12 @@ export function ReportForm({ report, onSuccess, onCancel }: ReportFormProps) {
   const { data: crimeTypes } = useQuery({
     queryKey: ["crime-types"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:4000/api/crime-types");
+      const token = localStorage.getItem("officerToken");
+      const response = await fetch("http://localhost:4000/api/crime-types", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!response.ok) throw new Error("Failed to fetch crime types");
       return response.json();
     },
@@ -90,6 +95,7 @@ export function ReportForm({ report, onSuccess, onCancel }: ReportFormProps) {
 
   const mutation = useMutation({
     mutationFn: async (data: ReportFormData) => {
+      const token = localStorage.getItem("officerToken");
       const url = report
         ? `http://localhost:4000/api/reports/${report.id}`
         : "http://localhost:4000/api/reports";
@@ -97,7 +103,10 @@ export function ReportForm({ report, onSuccess, onCancel }: ReportFormProps) {
 
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(data),
       });
 

@@ -104,7 +104,12 @@ export default function ReportsManagementPage() {
   const { data: reportsData, isLoading } = useQuery<ReportsResponse>({
     queryKey: ["reports-management"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:4000/api/reports");
+      const token = localStorage.getItem("officerToken");
+      const response = await fetch("http://localhost:4000/api/reports", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!response.ok) throw new Error("Failed to fetch reports");
       return response.json();
     },
@@ -113,8 +118,12 @@ export default function ReportsManagementPage() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const token = localStorage.getItem("officerToken");
       const response = await fetch(`http://localhost:4000/api/reports/${id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (!response.ok) throw new Error("Failed to delete report");
       return response.json();

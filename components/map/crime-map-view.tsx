@@ -154,7 +154,12 @@ export function CrimeMapView() {
     const fetchReports = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:4000/api/reports");
+        const token = localStorage.getItem("officerToken");
+        const response = await fetch("http://localhost:4000/api/reports", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`);
@@ -165,21 +170,22 @@ export function CrimeMapView() {
         if (data.success && Array.isArray(data.reports)) {
           // Filter reports with valid coordinates
           const validReports = data.reports.filter(
-            (r) => r.lat && r.lng && r.lat !== null && r.lng !== null
+            (r) => r && r.lat && r.lng && r.lat !== null && r.lng !== null
           );
           setReports(validReports);
         } else {
+          setReports([]); // Fallback to empty array
           throw new Error("Invalid API response format");
         }
       } catch (err) {
         console.error("Error fetching reports:", err);
         setError(err instanceof Error ? err.message : "Failed to load reports");
+        setReports([]); // Defensive fallback
       } finally {
         setLoading(false);
       }
     };
 
-    fetchReports();
     fetchReports();
   }, []);
 

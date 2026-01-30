@@ -315,7 +315,7 @@ interface ContactMessage {
   phone: string;
   subject: string;
   message: string;
-  status: "NEW" | "HANDLED";
+  status: "NEW" | "IN_REVIEW" | "RESOLVED" | "SPAM";
   handledById: string | null;
   handledAt: string | null;
   notes: string | null;
@@ -414,9 +414,8 @@ export default function ContactMessagesPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          status: "HANDLED",
+          status: "RESOLVED",
           notes,
-          handledById: "current-officer-id", // ← TODO: Replace with real ID
         }),
       });
 
@@ -489,7 +488,7 @@ export default function ContactMessagesPage() {
     const matchesTab =
       selectedTab === "all" ||
       (selectedTab === "new" && msg.status === "NEW") ||
-      (selectedTab === "handled" && msg.status === "HANDLED");
+      (selectedTab === "handled" && msg.status === "RESOLVED");
 
     return matchesSearch && matchesTab;
   });
@@ -497,7 +496,7 @@ export default function ContactMessagesPage() {
   // Count messages by status
   const newCount = messages.filter((msg) => msg.status === "NEW").length;
   const handledCount = messages.filter(
-    (msg) => msg.status === "HANDLED"
+    (msg) => msg.status === "RESOLVED"
   ).length;
 
   const handleViewDetail = (message: ContactMessage) => {
@@ -776,7 +775,7 @@ export default function ContactMessagesPage() {
               </div>
 
               {/* Handled Information */}
-              {selectedMessage.status === "HANDLED" &&
+              {selectedMessage.status === "RESOLVED" &&
                 selectedMessage.handledBy && (
                   <Card className="bg-green-50 border-green-200">
                     <CardHeader>

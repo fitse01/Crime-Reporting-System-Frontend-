@@ -350,6 +350,7 @@ export default function ReportDetailPage() {
     },
     onSuccess: (data) => {
       setReport(data.report);
+      queryClient.invalidateQueries({ queryKey: ["report", reportId] });
       toast.success(`Priority updated to ${data.report.priority}`);
     },
     onError: () => {
