@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "Adama City Police - Crime Report System",
   description:
     "Report crimes anonymously, track investigations, and stay informed with real-time safety updates from the Adama City Police Department.",
-  generator: "v0.app",
+  generator: "Adama City Police",
   icons: {
     icon: [
       {

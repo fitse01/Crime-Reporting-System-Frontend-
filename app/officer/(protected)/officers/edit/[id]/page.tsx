@@ -46,6 +46,7 @@ const officerSchema = z.object({
   maritalStatus: z.string().optional(),
   education: z.string().optional(),
   emergencyPhone: z.string().optional(),
+  role: z.string().default("OFFICER"),
 });
 
 type OfficerForm = z.infer<typeof officerSchema>;
@@ -106,6 +107,7 @@ export default function EditOfficerPage() {
         maritalStatus: officer.maritalStatus || "",
         education: officer.education || "",
         emergencyPhone: officer.emergencyPhone || "",
+        role: officer.user?.role?.name || "OFFICER", // Note: Backend returns role as object { name: 'OFFICER' } or just string dependign on query
       });
       if (officer.brand?.profileImage) {
         setPreviewUrl(officer.brand.profileImage);
@@ -208,6 +210,22 @@ export default function EditOfficerPage() {
             <div className="space-y-2">
               <Label>Rank *</Label>
               <Input {...register("rank")} />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select
+                value={watch("role")}
+                onValueChange={(v) => setValue("role", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="OFFICER">Officer</SelectItem>
+                  <SelectItem value="OPERATOR">Operator</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Password (Leave blank to keep current)</Label>

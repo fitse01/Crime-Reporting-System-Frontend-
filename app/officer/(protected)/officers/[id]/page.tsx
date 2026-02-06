@@ -1,3 +1,204 @@
+// "use client";
+
+// import { useQuery } from "@tanstack/react-query";
+// import { useParams, useRouter } from "next/navigation";
+// import { getToken, getUserInitials } from "@/lib/auth";
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+//   CardTitle,
+// } from "@/components/ui/card";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Badge } from "@/components/ui/badge";
+// import { Button } from "@/components/ui/button";
+// import { ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, Shield, Loader2 } from "lucide-react";
+
+// interface OfficerDetail {
+//   id: string;
+//   badgeNumber: string;
+//   rank: string;
+//   availability: string;
+//   user: {
+//     fullName: string;
+//     email: string;
+//     phone: string;
+//   };
+//   brand?: {
+//     profileImage?: string;
+//     displayName?: string;
+//     tagline?: string;
+//     publicBio?: string;
+//   };
+//   profile?: {
+//     dateOfBirth?: string;
+//     gender?: string;
+//     maritalStatus?: string;
+//     education?: string;
+//     emergencyPhone?: string;
+//   };
+//   caseStats?: {
+//     activeCases: number;
+//     closedCases: number;
+//     totalAssigned: number;
+//   };
+// }
+
+// export default function OfficerDetailPage() {
+//   const params = useParams();
+//   const router = useRouter();
+//   const officerId = params.id as string;
+
+//   const { data: officer, isLoading, error } = useQuery({
+//     queryKey: ["officer", officerId],
+//     queryFn: async () => {
+//       const token = getToken();
+//       const response = await fetch(`http://localhost:4000/api/officers/${officerId}`, {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//         },
+//       });
+
+//       if (!response.ok) {
+//         throw new Error("Failed to fetch officer details");
+//       }
+//       return response.json();
+//     },
+//   });
+
+//   if (isLoading) {
+//     return (
+//       <div className="flex items-center justify-center min-h-[60vh]">
+//         <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
+//       </div>
+//     );
+//   }
+
+//   if (error || !officer) {
+//     return (
+//       <div className="container mx-auto px-4 py-8">
+//         <div className="flex flex-col items-center justify-center space-y-4">
+//           <p className="text-red-600">Failed to load officer details.</p>
+//           <Button onClick={() => router.back()}>Go Back</Button>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   // Helper to resolve detailed officer data if nested under 'officer' key from API
+//   const data: OfficerDetail = officer.officer || officer; 
+
+//   return (
+//     <div className="container mx-auto px-4 py-8 max-w-6xl">
+//       <Button variant="ghost" onClick={() => router.back()} className="mb-6">
+//         <ArrowLeft className="mr-2 h-4 w-4" />
+//         Back to Officers
+//       </Button>
+
+//       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+//         {/* Left Column: Profile Card */}
+//         <Card className="md:col-span-1 border-t-4 border-t-cyan-500 shadow-lg">
+//           <CardContent className="pt-6 flex flex-col items-center text-center">
+//             <Avatar className="h-32 w-32 border-4 border-white shadow-sm mb-4">
+//               <AvatarImage src={data.brand?.profileImage} />
+//               <AvatarFallback className="text-2xl bg-cyan-100 text-cyan-800">
+//                 {getUserInitials(data.user.fullName)}
+//               </AvatarFallback>
+//             </Avatar>
+//             <h2 className="text-2xl font-bold text-slate-900">{data.user.fullName}</h2>
+//             <p className="text-muted-foreground font-medium mb-2">{data.rank}</p>
+//             <Badge className={
+//                data.availability === 'ON_DUTY' ? 'bg-green-500' : 
+//                data.availability === 'OFF_DUTY' ? 'bg-slate-500' : 'bg-yellow-500'
+//             }>
+//               {data.availability.replace('_', ' ')}
+//             </Badge>
+            
+//             <div className="w-full mt-6 space-y-3 text-left">
+//               <div className="flex items-center gap-3 text-sm text-slate-600">
+//                 <Shield className="h-4 w-4 text-cyan-600" />
+//                 <span>Badge: {data.badgeNumber}</span>
+//               </div>
+//               <div className="flex items-center gap-3 text-sm text-slate-600">
+//                 <Mail className="h-4 w-4 text-cyan-600" />
+//                 <span className="truncate" title={data.user.email}>{data.user.email}</span>
+//               </div>
+//               <div className="flex items-center gap-3 text-sm text-slate-600">
+//                 <Phone className="h-4 w-4 text-cyan-600" />
+//                 <span>{data.user.phone}</span>
+//               </div>
+//             </div>
+//           </CardContent>
+//         </Card>
+
+//         {/* Right Column: Stats & Details */}
+//         <div className="md:col-span-2 space-y-6">
+//           {/* Stats Grid */}
+//           <div className="grid grid-cols-3 gap-4">
+//             <Card>
+//               <CardContent className="p-4 flex flex-col items-center justify-center">
+//                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Active Cases</p>
+//                  <p className="text-2xl font-bold text-cyan-600">{data.caseStats?.activeCases || 0}</p>
+//               </CardContent>
+//             </Card>
+//              <Card>
+//               <CardContent className="p-4 flex flex-col items-center justify-center">
+//                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Closed Cases</p>
+//                  <p className="text-2xl font-bold text-green-600">{data.caseStats?.closedCases || 0}</p>
+//               </CardContent>
+//             </Card>
+//              <Card>
+//               <CardContent className="p-4 flex flex-col items-center justify-center">
+//                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Assigned</p>
+//                  <p className="text-2xl font-bold text-slate-600">
+//                    {(data.caseStats?.activeCases || 0) + (data.caseStats?.closedCases || 0)}
+//                  </p>
+//               </CardContent>
+//             </Card>
+//           </div>
+
+//           {/* Additional Info Tabs/Cards */}
+//           <Card>
+//             <CardHeader>
+//               <CardTitle>Personal Information</CardTitle>
+//             </CardHeader>
+//             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+//                <div>
+//                  <p className="text-sm font-medium text-muted-foreground">Display Name</p>
+//                  <p className="text-slate-900">{data.brand?.displayName || "-"}</p>
+//                </div>
+//                <div>
+//                   <p className="text-sm font-medium text-muted-foreground">Education</p>
+//                   <p className="text-slate-900">{data.profile?.education || "-"}</p>
+//                </div>
+//                 <div>
+//                   <p className="text-sm font-medium text-muted-foreground">Gender</p>
+//                   <p className="text-slate-900 capitalize">{data.profile?.gender?.toLowerCase() || "-"}</p>
+//                </div>
+//                <div>
+//                   <p className="text-sm font-medium text-muted-foreground">Join Date</p>
+//                   <p className="text-slate-900">-</p> 
+//                </div>
+//             </CardContent>
+//           </Card>
+
+//            <Card>
+//             <CardHeader>
+//               <CardTitle>Biography</CardTitle>
+//             </CardHeader>
+//             <CardContent>
+//                <p className="text-sm text-slate-600 leading-relaxed">
+//                  {data.brand?.publicBio || "No biography provided."}
+//                </p>
+//             </CardContent>
+//           </Card>
+
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 // app/officer/(dashboard)/officers/[id]/page.tsx
 "use client";
 
@@ -543,512 +744,3 @@ export default function OfficerDetailPage() {
     </div>
   );
 }
-// "use client";
-
-// import { useParams, useRouter } from "next/navigation";
-// import { useQuery } from "@tanstack/react-query";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// import {
-//   ArrowLeft,
-//   Mail,
-//   MapPin,
-//   Award,
-//   TrendingUp,
-//   FileText,
-//   Loader2,
-//   Shield,
-//   User,
-// } from "lucide-react";
-// import Link from "next/link";
-
-// export default function OfficerDetailPage() {
-//   const params = useParams();
-//   const router = useRouter();
-//   const officerId = params?.id as string;
-
-//   const { data: officer, isLoading } = useQuery({
-//     queryKey: ["officer", officerId],
-//     queryFn: async () => {
-//       const response = await fetch(
-//         `http://localhost:4000/api/officers/${officerId}`
-//       );
-//       if (!response.ok) throw new Error("Failed to fetch officer");
-//       const result = await response.json();
-//       return result.officer;
-//     },
-//   });
-
-//   if (isLoading) {
-//     return (
-//       <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
-//         <Loader2 className="h-8 w-8 animate-spin text-blue-900" />
-//       </div>
-//     );
-//   }
-
-//   if (!officer) {
-//     return (
-//       <div className="container mx-auto px-4 py-8">
-//         <Card>
-//           <CardContent className="p-12 text-center">
-//             <h3 className="text-xl font-semibold mb-2">Officer Not Found</h3>
-//             <p className="text-muted-foreground mb-4">
-//               The officer you're looking for doesn't exist
-//             </p>
-//             <Button onClick={() => router.back()}>Go Back</Button>
-//           </CardContent>
-//         </Card>
-//       </div>
-//     );
-//   }
-
-//   const getAvailabilityBadge = (availability: string) => {
-//     switch (availability) {
-//       case "ON_DUTY":
-//         return (
-//           <Badge className="bg-green-500 hover:bg-green-600">On Duty</Badge>
-//         );
-//       case "OFF_DUTY":
-//         return <Badge variant="secondary">Off Duty</Badge>;
-//       case "ON_LEAVE":
-//         return <Badge variant="outline">On Leave</Badge>;
-//       case "BUSY":
-//         return (
-//           <Badge className="bg-yellow-500 hover:bg-yellow-600">Busy</Badge>
-//         );
-//       default:
-//         return <Badge>{availability}</Badge>;
-//     }
-//   };
-
-//   return (
-//     <div className="container mx-auto px-4 py-8">
-//       <Button variant="ghost" onClick={() => router.back()} className="mb-6">
-//         <ArrowLeft className="mr-2 h-4 w-4" />
-//         Back to Officers
-//       </Button>
-
-//       {/* Header */}
-//       <Card className="mb-6">
-//         <CardContent className="p-6">
-//           <div className="flex items-start gap-6">
-//             <Avatar className="h-24 w-24">
-//               <AvatarImage
-//                 src={officer.brand?.profileImage || "/placeholder.svg"}
-//               />
-//               <AvatarFallback className="bg-blue-900 text-white text-2xl">
-//                 {officer.user?.fullName
-//                   ?.split(" ")
-//                   .map((n: string) => n[0])
-//                   .join("") || "O"}
-//               </AvatarFallback>
-//             </Avatar>
-
-//             <div className="flex-1">
-//               <div className="flex items-center gap-3 mb-2">
-//                 <h1 className="text-2xl font-bold">{officer.user?.fullName}</h1>
-//                 {getAvailabilityBadge(officer.availability)}
-//               </div>
-//               {officer.brand?.displayName && (
-//                 <p className="text-lg text-muted-foreground mb-1">
-//                   {officer.brand.displayName}
-//                 </p>
-//               )}
-//               {officer.brand?.tagline && (
-//                 <p className="text-sm text-muted-foreground mb-3">
-//                   {officer.brand.tagline}
-//                 </p>
-//               )}
-//               <div className="flex flex-wrap gap-4 text-sm">
-//                 <div className="flex items-center gap-2">
-//                   <Shield className="h-4 w-4 text-muted-foreground" />
-//                   <span className="font-medium">Badge:</span>{" "}
-//                   {officer.badgeNumber}
-//                 </div>
-//                 <div className="flex items-center gap-2">
-//                   <User className="h-4 w-4 text-muted-foreground" />
-//                   <span className="font-medium">Rank:</span> {officer.rank}
-//                 </div>
-//               </div>
-//             </div>
-
-//             <div className="flex gap-2">
-//               <Button variant="outline">Edit Officer</Button>
-//               <Button
-//                 variant="destructive"
-//                 className="bg-red-600 hover:bg-red-700"
-//               >
-//                 Delete
-//               </Button>
-//             </div>
-//           </div>
-//         </CardContent>
-//       </Card>
-
-//       {/* Tabs */}
-//       <Tabs defaultValue="overview" className="space-y-6">
-//         <TabsList className="grid w-full grid-cols-5">
-//           <TabsTrigger value="overview">Overview</TabsTrigger>
-//           <TabsTrigger value="profile">Profile Details</TabsTrigger>
-//           <TabsTrigger value="brand">Brand & Public Info</TabsTrigger>
-//           <TabsTrigger value="skills">Skills</TabsTrigger>
-//           <TabsTrigger value="cases">Assigned Cases</TabsTrigger>
-//         </TabsList>
-
-//         {/* Overview Tab */}
-//         <TabsContent value="overview" className="space-y-6">
-//           <div className="grid md:grid-cols-2 gap-6">
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle className="flex items-center gap-2">
-//                   <Mail className="h-5 w-5" />
-//                   Contact Information
-//                 </CardTitle>
-//               </CardHeader>
-//               <CardContent className="space-y-3">
-//                 <div>
-//                   <p className="text-sm text-muted-foreground">Email</p>
-//                   <p className="font-medium">{officer.user?.email}</p>
-//                 </div>
-//                 <div>
-//                   <p className="text-sm text-muted-foreground">Phone</p>
-//                   <p className="font-medium">{officer.user?.phone}</p>
-//                 </div>
-//                 {officer.profileDetails?.emergencyPhone && (
-//                   <div>
-//                     <p className="text-sm text-muted-foreground">
-//                       Emergency Contact
-//                     </p>
-//                     <p className="font-medium">
-//                       {officer.profileDetails.emergencyPhone}
-//                     </p>
-//                   </div>
-//                 )}
-//               </CardContent>
-//             </Card>
-
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle className="flex items-center gap-2">
-//                   <TrendingUp className="h-5 w-5" />
-//                   Case Statistics
-//                 </CardTitle>
-//               </CardHeader>
-//               <CardContent className="space-y-3">
-//                 <div className="flex justify-between">
-//                   <span className="text-muted-foreground">Active Cases</span>
-//                   <span className="font-bold text-lg">
-//                     {officer.caseStats?.activeCases || 0}
-//                   </span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-muted-foreground">Closed Cases</span>
-//                   <span className="font-bold text-lg">
-//                     {officer.caseStats?.closedCases || 0}
-//                   </span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-muted-foreground">
-//                     Reassigned Cases
-//                   </span>
-//                   <span className="font-bold text-lg">
-//                     {officer.caseStats?.reassignedCases || 0}
-//                   </span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-muted-foreground">
-//                     Max Active Cases
-//                   </span>
-//                   <span className="font-bold text-lg">
-//                     {officer.maxActiveCases}
-//                   </span>
-//                 </div>
-//               </CardContent>
-//             </Card>
-
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle className="flex items-center gap-2">
-//                   <Award className="h-5 w-5" />
-//                   Reputation
-//                 </CardTitle>
-//               </CardHeader>
-//               <CardContent className="space-y-3">
-//                 <div className="flex justify-between">
-//                   <span className="text-muted-foreground">Rating</span>
-//                   <span className="font-bold">
-//                     {officer.reputation?.rating || 0}/5
-//                   </span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-muted-foreground">Commendations</span>
-//                   <span className="font-bold">
-//                     {officer.reputation?.commendations || 0}
-//                   </span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-muted-foreground">Complaints</span>
-//                   <span className="font-bold">
-//                     {officer.reputation?.complaints || 0}
-//                   </span>
-//                 </div>
-//               </CardContent>
-//             </Card>
-
-//             {officer.station && (
-//               <Card>
-//                 <CardHeader>
-//                   <CardTitle className="flex items-center gap-2">
-//                     <MapPin className="h-5 w-5" />
-//                     Station Assignment
-//                   </CardTitle>
-//                 </CardHeader>
-//                 <CardContent className="space-y-2">
-//                   <div>
-//                     <p className="text-sm text-muted-foreground">City</p>
-//                     <p className="font-medium">{officer.station.city}</p>
-//                   </div>
-//                   <div>
-//                     <p className="text-sm text-muted-foreground">Sub-City</p>
-//                     <p className="font-medium">{officer.station.subCity}</p>
-//                   </div>
-//                   <div>
-//                     <p className="text-sm text-muted-foreground">Kebele</p>
-//                     <p className="font-medium">{officer.station.kebele}</p>
-//                   </div>
-//                 </CardContent>
-//               </Card>
-//             )}
-//           </div>
-//         </TabsContent>
-
-//         {/* Profile Details Tab */}
-//         <TabsContent value="profile">
-//           <Card>
-//             <CardHeader>
-//               <CardTitle>Profile Details</CardTitle>
-//             </CardHeader>
-//             <CardContent className="grid md:grid-cols-2 gap-6">
-//               {officer.profileDetails ? (
-//                 <>
-//                   <div>
-//                     <p className="text-sm text-muted-foreground">
-//                       Date of Birth
-//                     </p>
-//                     <p className="font-medium">
-//                       {officer.profileDetails.dateOfBirth
-//                         ? new Date(
-//                             officer.profileDetails.dateOfBirth
-//                           ).toLocaleDateString()
-//                         : "N/A"}
-//                     </p>
-//                   </div>
-//                   <div>
-//                     <p className="text-sm text-muted-foreground">Gender</p>
-//                     <p className="font-medium">
-//                       {officer.profileDetails.gender || "N/A"}
-//                     </p>
-//                   </div>
-//                   <div>
-//                     <p className="text-sm text-muted-foreground">
-//                       Marital Status
-//                     </p>
-//                     <p className="font-medium">
-//                       {officer.profileDetails.maritalStatus || "N/A"}
-//                     </p>
-//                   </div>
-//                   <div>
-//                     <p className="text-sm text-muted-foreground">Education</p>
-//                     <p className="font-medium">
-//                       {officer.profileDetails.education || "N/A"}
-//                     </p>
-//                   </div>
-//                   {officer.profileDetails.yearsOfService && (
-//                     <div>
-//                       <p className="text-sm text-muted-foreground">
-//                         Years of Service
-//                       </p>
-//                       <p className="font-medium">
-//                         {officer.profileDetails.yearsOfService}
-//                       </p>
-//                     </div>
-//                   )}
-//                   {officer.profileDetails.address && (
-//                     <div className="md:col-span-2">
-//                       <p className="text-sm text-muted-foreground">Address</p>
-//                       <p className="font-medium">
-//                         {officer.profileDetails.address}
-//                       </p>
-//                     </div>
-//                   )}
-//                   {officer.profileDetails.biography && (
-//                     <div className="md:col-span-2">
-//                       <p className="text-sm text-muted-foreground">Biography</p>
-//                       <p className="font-medium">
-//                         {officer.profileDetails.biography}
-//                       </p>
-//                     </div>
-//                   )}
-//                 </>
-//               ) : (
-//                 <p className="text-muted-foreground">
-//                   No profile details available
-//                 </p>
-//               )}
-//             </CardContent>
-//           </Card>
-//         </TabsContent>
-
-//         {/* Brand Tab */}
-//         <TabsContent value="brand">
-//           <Card>
-//             <CardHeader>
-//               <CardTitle>Brand & Public Information</CardTitle>
-//             </CardHeader>
-//             <CardContent className="space-y-6">
-//               {officer.brand ? (
-//                 <>
-//                   {officer.brand.publicBio && (
-//                     <div>
-//                       <p className="text-sm text-muted-foreground mb-2">
-//                         Public Bio
-//                       </p>
-//                       <p className="leading-relaxed">
-//                         {officer.brand.publicBio}
-//                       </p>
-//                     </div>
-//                   )}
-//                   {officer.brand.achievements && (
-//                     <div>
-//                       <p className="text-sm text-muted-foreground mb-2">
-//                         Achievements
-//                       </p>
-//                       <p className="leading-relaxed">
-//                         {officer.brand.achievements}
-//                       </p>
-//                     </div>
-//                   )}
-//                   {officer.brand.socialLinks && (
-//                     <div>
-//                       <p className="text-sm text-muted-foreground mb-2">
-//                         Social Links
-//                       </p>
-//                       <p className="leading-relaxed">
-//                         {officer.brand.socialLinks}
-//                       </p>
-//                     </div>
-//                   )}
-//                 </>
-//               ) : (
-//                 <p className="text-muted-foreground">
-//                   No brand information available
-//                 </p>
-//               )}
-//             </CardContent>
-//           </Card>
-//         </TabsContent>
-
-//         {/* Skills Tab */}
-//         <TabsContent value="skills">
-//           <Card>
-//             <CardHeader>
-//               <CardTitle>Skills & Certifications</CardTitle>
-//             </CardHeader>
-//             <CardContent>
-//               {officer.skills && officer.skills.length > 0 ? (
-//                 <div className="grid md:grid-cols-2 gap-4">
-//                   {officer.skills.map((skill: any) => (
-//                     <div key={skill.id} className="p-4 border rounded-lg">
-//                       <div className="flex items-center justify-between mb-2">
-//                         <h4 className="font-semibold">
-//                           {skill.skill.replace(/_/g, " ")}
-//                         </h4>
-//                         {skill.certified && (
-//                           <Badge className="bg-cyan-500">Certified</Badge>
-//                         )}
-//                       </div>
-//                       <p className="text-sm text-muted-foreground">
-//                         Level: {skill.level}
-//                       </p>
-//                     </div>
-//                   ))}
-//                 </div>
-//               ) : (
-//                 <p className="text-muted-foreground">No skills recorded</p>
-//               )}
-//             </CardContent>
-//           </Card>
-//         </TabsContent>
-
-//         {/* Cases Tab */}
-//         <TabsContent value="cases">
-//           <Card>
-//             <CardHeader>
-//               <CardTitle className="flex items-center gap-2">
-//                 <FileText className="h-5 w-5" />
-//                 Assigned Cases
-//               </CardTitle>
-//             </CardHeader>
-//             <CardContent>
-//               {officer.assignments && officer.assignments.length > 0 ? (
-//                 <div className="space-y-4">
-//                   {officer.assignments.map((assignment: any) => (
-//                     <Link
-//                       key={assignment.id}
-//                       href={`/officer/cases/${assignment.report.caseNumber}`}
-//                     >
-//                       <div className="p-4 border rounded-lg hover:bg-accent transition-colors cursor-pointer">
-//                         <div className="flex items-start justify-between mb-2">
-//                           <div>
-//                             <h4 className="font-semibold">
-//                               {assignment.report.caseNumber}
-//                             </h4>
-//                             <p className="text-sm text-muted-foreground">
-//                               {assignment.report.title}
-//                             </p>
-//                           </div>
-//                           <Badge
-//                             className={
-//                               assignment.report.priority === "HIGH"
-//                                 ? "bg-red-500"
-//                                 : assignment.report.priority === "MEDIUM"
-//                                 ? "bg-yellow-500"
-//                                 : ""
-//                             }
-//                           >
-//                             {assignment.report.priority}
-//                           </Badge>
-//                         </div>
-//                         <p className="text-sm text-muted-foreground mb-2">
-//                           {assignment.report.description}
-//                         </p>
-//                         <div className="flex gap-4 text-xs text-muted-foreground">
-//                           <span>Status: {assignment.report.status}</span>
-//                           <span>
-//                             Distance: {assignment.distanceKm.toFixed(2)} km
-//                           </span>
-//                           <span>
-//                             Assigned:{" "}
-//                             {new Date(
-//                               assignment.createdAt
-//                             ).toLocaleDateString()}
-//                           </span>
-//                         </div>
-//                       </div>
-//                     </Link>
-//                   ))}
-//                 </div>
-//               ) : (
-//                 <p className="text-muted-foreground">No assigned cases</p>
-//               )}
-//             </CardContent>
-//           </Card>
-//         </TabsContent>
-//       </Tabs>
-//     </div>
-//   );
-// }

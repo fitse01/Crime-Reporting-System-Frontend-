@@ -24,6 +24,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
   Search,
   Plus,
   Eye,
@@ -59,6 +72,37 @@ export default function OfficersPage() {
   // --- Auth & Permissions Logic ---
   const user = getUser();
   const canModify = user ? canManageOfficers(user.role) : false;
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [officerToDelete, setOfficerToDelete] = useState<string | null>(null);
+
+  const deleteOfficerMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = getToken();
+      const response = await fetch(`http://localhost:4000/api/officers/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete officer");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success("Officer deleted successfully");
+      setShowDeleteDialog(false);
+      setOfficerToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["officers"] });
+    },
+    onError: (error) => {
+      toast.error("Failed to delete officer");
+      console.error(error);
+    },
+  });
 
   const {
     data: officersData,
@@ -214,6 +258,7 @@ export default function OfficersPage() {
                 <TableHead>Badge #</TableHead>
                 <TableHead>Rank</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Total Cases</TableHead>
                 <TableHead>Active Cases</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -222,7 +267,8 @@ export default function OfficersPage() {
               {filteredOfficers.map((officer) => (
                 <TableRow
                   key={officer.id}
-                  className="hover:bg-slate-50/50 transition-colors"
+                  className="hover:bg-slate-50/50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/officer/officers/${officer.id}`)}
                 >
                   <TableCell>
                     <Avatar className="h-10 w-10 border">
@@ -250,6 +296,11 @@ export default function OfficersPage() {
                     {getAvailabilityBadge(officer.availability)}
                   </TableCell>
                   <TableCell>
+                    <div className="font-medium">
+                      {(officer.caseStats?.activeCases || 0) + (officer.caseStats?.closedCases || 0)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-cyan-500" />
                       {officer.caseStats?.activeCases || 0}
@@ -257,7 +308,7 @@ export default function OfficersPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Link href={`/officer/officers/${officer.id}`}>
+                      <Link href={`/officer/officers/${officer.id}`} onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -269,7 +320,7 @@ export default function OfficersPage() {
 
                       {canModify && (
                         <>
-                          <Link href={`/officer/officers/edit/${officer.id}`}>
+                          <Link href={`/officer/officers/edit/${officer.id}`} onClick={(e) => e.stopPropagation()}>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -283,6 +334,11 @@ export default function OfficersPage() {
                             size="icon"
                             className="hover:bg-red-50"
                             title="Delete Officer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOfficerToDelete(officer.id);
+                              setShowDeleteDialog(true);
+                            }}
                           >
                             <Trash2 className="h-4 w-4 text-red-600" />
                           </Button>
@@ -308,6 +364,32 @@ export default function OfficersPage() {
           </div>
         )}
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              officer account and remove their data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (officerToDelete) {
+                  deleteOfficerMutation.mutate(officerToDelete);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteOfficerMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {error && (
         <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm flex items-center gap-2">
