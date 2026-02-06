@@ -70,10 +70,12 @@ export function SiteFooter() {
           <div className="space-y-4">
             <h3 className="font-semibold">Contact</h3>
             <ul className="space-y-2 text-sm">
+              <Link href="tel:9141">
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                <span>Emergency: 911</span>
+                <span>Emergency: 9141</span>
               </li>
+              </Link>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
                 <span>Non-Emergency: (555) 123-4567</span>

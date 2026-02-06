@@ -304,19 +304,21 @@ export default function HomePage() {
       <section className="bg-red-500 text-destructive-foreground py-8">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <Link href="tel:9141">
             <div className="flex items-center gap-4">
               <Phone className="h-8 w-8" />
               <div>
                 <h3 className="text-xl font-bold">Emergency?</h3>
                 <p className="text-destructive-foreground/90">
-                  Call 911 for immediate assistance
+                  Call 9141 for immediate assistance
                 </p>
               </div>
-            </div>
+            </div></Link>
+            <Link href="tel:9141">
             <Button size="lg" variant="secondary">
               <Phone className="mr-2 h-5 w-5" />
               Call Now
-            </Button>
+            </Button></Link>
           </div>
         </div>
       </section>
