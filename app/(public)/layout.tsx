@@ -41,17 +41,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
-        <ReactQueryProvider>
-          <SiteHeader />
-          <main className="min-h-screen">{children}</main>
-          {/* <AiChatButton /> */}
-          <AiChatWidget />
-          <SiteFooter />
-          <Analytics />
-        </ReactQueryProvider>
-      </body>
-    </html>
+    <ReactQueryProvider>
+      <SiteHeader />
+      <main className="min-h-screen">{children}</main>
+      {/* <AiChatButton /> */}
+      <AiChatWidget />
+      <SiteFooter />
+      <Analytics />
+    </ReactQueryProvider>
   );
 }

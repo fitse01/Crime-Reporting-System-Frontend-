@@ -1,15 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -17,14 +13,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Shield, Loader2 } from "lucide-react";
-import { saveAuthData, isAuthenticated } from "@/lib/auth";
-import { useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Shield, Loader2, AlertCircle, Clock } from "lucide-react";
+import { toast } from "sonner";
 
-// Validation schema
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -35,21 +40,17 @@ interface LoginResponse {
     id: string;
     email: string;
     fullName: string;
-    role: "SUPER_ADMIN" | "ADMIN" | "OPERATOR" | "OFFICER";
+    role: string;
   };
 }
 
 export default function OfficerLoginPage() {
   const router = useRouter();
   const [isRedirecting, setIsRedirecting] = useState(true);
-
-  useEffect(() => {
-    if (isAuthenticated()) {
-      router.replace("/officer/dashboard");
-    } else {
-      setIsRedirecting(false);
-    }
-  }, [router]);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [countdown, setCountdown] = useState(60);
 
   const {
     register,
@@ -59,55 +60,111 @@ export default function OfficerLoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  // Check if already authenticated
+  useEffect(() => {
+    const token = localStorage.getItem("officerToken");
+    const userStr = localStorage.getItem("officerUser");
+
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        if (user.role === "OPERATOR") {
+          router.push("/operator/dashboard");
+        } else if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+          router.push("/admin/dashboard");
+        } else {
+          router.push("/officer/dashboard");
+        }
+      } catch {
+        setIsRedirecting(false);
+      }
+    } else {
+      setIsRedirecting(false);
+    }
+  }, [router]);
+
+  // Countdown timer for rate limiting
+  useEffect(() => {
+    if (isRateLimited && countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0) {
+      setIsRateLimited(false);
+      setCountdown(60);
+      setShowErrorModal(false);
+    }
+  }, [isRateLimited, countdown]);
+
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormData) => {
       const response = await fetch("http://localhost:4000/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
+      // Handle rate limiting (429)
+      if (response.status === 429) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error("RATE_LIMIT");
+      }
+
+      // Handle authentication errors (401)
+      if (response.status === 401) {
+        throw new Error("INVALID_CREDENTIALS");
+      }
+
+      // Handle other errors
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Login failed");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Login failed");
       }
 
       return response.json() as Promise<LoginResponse>;
     },
-    // onSuccess: (data) => {
-    // // Save token and user to localStorage
-    // saveAuthData(data.token, data.user);
-
-    //   // Show success toast
-    //   toast.success(`Welcome back, ${data.user.fullName}!`);
-
-    //   // Redirect to dashboard
-    //   router.push("/officer/dashboard");
-    // },
     onSuccess: (data) => {
-      // 1. Save to localStorage (for the UI/Client state)
-      saveAuthData(data.token, data.user);
+      // Save to localStorage
+      localStorage.setItem("officerToken", data.token);
+      localStorage.setItem("officerAuth", "true");
+      localStorage.setItem("officerUser", JSON.stringify(data.user));
 
-      // 2. Save to Cookie (for the Middleware/Server state)
-      // This is the "Key" that opens the door in the middleware
+      // Save to Cookie for middleware
       document.cookie = `userRole=${data.user.role}; path=/; max-age=86400; SameSite=Lax`;
 
       toast.success(`Welcome back, ${data.user.fullName}!`);
 
-      // Use window.location.href for the first redirect after login
-      // to ensure the cookie is fully recognized by the server
-      window.location.href = "/officer/dashboard";
+      // Redirect based on role
+      if (data.user.role === "OPERATOR") {
+        window.location.href = "/operator/dashboard";
+      } else if (data.user.role === "SUPER_ADMIN" || data.user.role === "ADMIN") {
+        window.location.href = "/admin/dashboard";
+      } else {
+        window.location.href = "/officer/dashboard";
+      }
     },
     onError: (error: Error) => {
-      toast.error(
-        error.message || "Login failed. Please check your credentials."
-      );
+      if (error.message === "RATE_LIMIT") {
+        setIsRateLimited(true);
+        setCountdown(60);
+        setErrorMessage(
+          "Too many login attempts. Please wait 1 minute and try again."
+        );
+        setShowErrorModal(true);
+      } else if (error.message === "INVALID_CREDENTIALS") {
+        setErrorMessage("Incorrect email or password. Please try again.");
+        setShowErrorModal(true);
+      } else {
+        setErrorMessage(error.message || "Login failed. Please try again.");
+        setShowErrorModal(true);
+      }
     },
   });
 
   const onSubmit = (data: LoginFormData) => {
+    if (isRateLimited) {
+      toast.error(`Please wait ${countdown} seconds before trying again`);
+      return;
+    }
     loginMutation.mutate(data);
   };
 
@@ -140,10 +197,9 @@ export default function OfficerLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="officer@adama-police.gov"
+                placeholder="officer@adama.et"
                 {...register("email")}
-                disabled={loginMutation.isPending}
-                className="h-11"
+                disabled={loginMutation.isPending || isRateLimited}
               />
               {errors.email && (
                 <p className="text-sm text-red-600">{errors.email.message}</p>
@@ -158,57 +214,78 @@ export default function OfficerLoginPage() {
                 type="password"
                 placeholder="Enter your password"
                 {...register("password")}
-                disabled={loginMutation.isPending}
-                className="h-11"
+                disabled={loginMutation.isPending || isRateLimited}
               />
               {errors.password && (
-                <p className="text-sm text-red-600">
-                  {errors.password.message}
-                </p>
+                <p className="text-sm text-red-600">{errors.password.message}</p>
               )}
             </div>
+
+            {/* Rate Limit Warning */}
+            {isRateLimited && (
+              <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                <Clock className="w-4 h-4 text-orange-600" />
+                <p className="text-sm text-orange-800">
+                  Please wait <strong>{countdown}s</strong> before trying again
+                </p>
+              </div>
+            )}
 
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-12 text-base font-semibold bg-blue-900 hover:bg-blue-800"
-              disabled={loginMutation.isPending}
+              className="w-full"
+              disabled={loginMutation.isPending || isRateLimited}
             >
               {loginMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing in...
                 </>
+              ) : isRateLimited ? (
+                `Wait ${countdown}s`
               ) : (
                 "Sign In"
               )}
             </Button>
           </form>
-
-          {/* Access Levels Info */}
-          <div className="mt-6 text-center space-y-3 pt-6 border-t">
-            <div className="p-4 bg-blue-50 rounded-lg space-y-2">
-              <p className="text-sm font-semibold text-blue-900">
-                Access Levels:
-              </p>
-              <div className="text-xs text-gray-600 space-y-1 text-left">
-                <p>
-                  <strong>Officer</strong> - Case management & reporting
-                </p>
-                <p>
-                  <strong>Operator</strong> - Report management & oversight
-                </p>
-                <p>
-                  <strong>Admin</strong> - Officer & system management
-                </p>
-                <p>
-                  <strong>Super Admin</strong> - Full system access
-                </p>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
+
+      {/* Error Modal */}
+      <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <AlertCircle className={`w-5 h-5 ${isRateLimited ? "text-orange-600" : "text-red-600"}`} />
+              <DialogTitle>
+                {isRateLimited ? "Too Many Attempts" : "Login Failed"}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="pt-2">
+              {errorMessage}
+            </DialogDescription>
+            {isRateLimited && (
+              <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-md">
+                <p className="text-sm text-orange-800">
+                  <strong>Security Notice:</strong> For your protection, we limit login attempts to prevent unauthorized access.
+                </p>
+                <p className="text-sm text-orange-800 mt-2">
+                  Time remaining: <strong className="text-lg">{countdown}s</strong>
+                </p>
+              </div>
+            )}
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              onClick={() => setShowErrorModal(false)}
+              variant={isRateLimited ? "secondary" : "default"}
+            >
+              {isRateLimited ? `Wait ${countdown}s` : "Try Again"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -331,6 +331,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FinalReportForm } from "@/components/officer/FinalReportForm"; // Import Added
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -929,6 +930,14 @@ export default function CasetDetailPage() {
                     </Button>
                   </CardContent>
                 </Card>
+                {/* Evidence Section */}
+                {/* ... (existing evidence section) ... */}
+
+                {/* Final Report Section - Officer Only */}
+                {report && report.status !== "CLOSED" && report.status !== "RESOLVED" && report.assignedOfficerId === user.id && (
+                     <FinalReportForm reportId={report.id} />
+                )}
+                
               </div>
             )}
           </div>

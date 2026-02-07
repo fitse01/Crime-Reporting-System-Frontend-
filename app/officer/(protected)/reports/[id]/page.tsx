@@ -48,6 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import FinalReportForm from "./components/FinalReportForm";
 
 interface CrimeType {
   id: number;
@@ -113,6 +114,18 @@ interface Report {
   location: Location | null;
   assignedOfficer: AssignedOfficer | null;
   evidence: Evidence[];
+  statusHistory?: StatusHistoryEntry[];
+}
+
+interface StatusHistoryEntry {
+  id: string;
+  oldStatus: string | null;
+  newStatus: string;
+  comment: string | null;
+  createdAt: string;
+  changedBy: {
+    fullName: string;
+  } | null;
 }
 
 const getPriorityColor = (priority: string) => {
@@ -650,6 +663,59 @@ export default function ReportDetailPage() {
                   </Card>
                 )}
 
+                {/* Investigation History */}
+                {report.statusHistory && report.statusHistory.length > 0 && (
+                  <Card className="border-0 shadow-sm">
+                    <CardHeader className="pb-4 border-b">
+                      <CardTitle className="text-lg">Investigation History</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Timeline of status changes and investigation notes
+                      </p>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        {report.statusHistory.map((entry, index) => (
+                          <div
+                            key={entry.id}
+                            className="flex gap-4 pb-4 border-b last:border-0 last:pb-0"
+                          >
+                            <div className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-blue-600" />
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-start justify-between gap-4">
+                                <div>
+                                  <p className="text-sm font-semibold">
+                                    Status changed to{" "}
+                                    <Badge variant={getStatusColor(entry.newStatus)} className="ml-1">
+                                      {entry.newStatus}
+                                    </Badge>
+                                  </p>
+                                  {entry.changedBy && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      By {entry.changedBy.fullName}
+                                    </p>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {formatDistanceToNow(new Date(entry.createdAt), {
+                                    addSuffix: true,
+                                  })}
+                                </p>
+                              </div>
+                              {entry.comment && (
+                                <div className="mt-2 p-3 bg-muted/50 rounded-md border">
+                                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                                    {entry.comment}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Investigation Result Form */}
                 <Card className="border-0 shadow-sm ring-1 ring-border/50">
                   <CardHeader className="pb-4 border-b bg-slate-50/50">
@@ -725,6 +791,26 @@ export default function ReportDetailPage() {
                     </form>
                   </CardContent>
                 </Card>
+
+                {/* Final Report Submission - Only for assigned officers */}
+                {report.assignedOfficerId && 
+                 (report.status === "IN_PROGRESS" || report.status === "RESOLVED") && (
+                  <FinalReportForm 
+                    reportId={report.id} 
+                    onSuccess={() => {
+                      // Refetch report to show updated status
+                      fetch(`http://localhost:4000/api/reports/${reportId}`, {
+                        headers: {
+                          Authorization: `Bearer ${localStorage.getItem("officerToken") || ""}`,
+                        },
+                      })
+                        .then((res) => res.json())
+                        .then((data) => {
+                          if (data.success && data.report) setReport(data.report);
+                        });
+                    }}
+                  />
+                )}
               </div>
             )}
           </div>
