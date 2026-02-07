@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ReactQueryProvider } from "../providers";
 import AiChatButton from "@/components/AiChatButton";
+import AiChatWidget from "@/components/ai-chat-widget";
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
@@ -18,19 +19,19 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/icon-light-32x32.png",
+        url: "/police-logo.jpeg",
         media: "(prefers-color-scheme: light)",
       },
       {
-        url: "/icon-dark-32x32.png",
+        url: "/police-logo.jpeg",
         media: "(prefers-color-scheme: dark)",
       },
       {
-        url: "/icon.svg",
+        url: "/police-logo.ico",
         type: "image/svg+xml",
       },
     ],
-    apple: "/apple-icon.png",
+    apple: "/police-logo.jpeg",
   },
 };
 
@@ -45,7 +46,8 @@ export default function RootLayout({
         <ReactQueryProvider>
           <SiteHeader />
           <main className="min-h-screen">{children}</main>
-          <AiChatButton />
+          {/* <AiChatButton /> */}
+          <AiChatWidget />
           <SiteFooter />
           <Analytics />
         </ReactQueryProvider>

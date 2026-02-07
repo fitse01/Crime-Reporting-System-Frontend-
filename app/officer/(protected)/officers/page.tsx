@@ -64,7 +64,12 @@ interface Officer {
     activeCases: number;
     closedCases: number;
   };
+  _count?: {
+    assignments: number;
+  };
 }
+
+
 
 export default function OfficersPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -149,7 +154,7 @@ export default function OfficersPage() {
     onDuty: officers.filter((o) => o.availability === "ON_DUTY").length,
     offDuty: officers.filter((o) => o.availability === "OFF_DUTY").length,
     activeCases: officers.reduce(
-      (sum, o) => sum + (o.caseStats?.activeCases || 0),
+      (sum, o) => sum + (o._count?.assignments || 0),
       0
     ),
   };
@@ -297,13 +302,13 @@ export default function OfficersPage() {
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">
-                      {(officer.caseStats?.activeCases || 0) + (officer.caseStats?.closedCases || 0)}
+                      {(officer._count?.assignments || 0) + (officer.caseStats?.closedCases || 0)}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-cyan-500" />
-                      {officer.caseStats?.activeCases || 0}
+                      {officer._count?.assignments || 0}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
