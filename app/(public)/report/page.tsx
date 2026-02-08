@@ -104,6 +104,7 @@ export default function ReportPage() {
     trigger,
   } = useForm<ReportFormData>({
     resolver: zodResolver(reportSchema),
+    shouldUnregister: false,
     defaultValues: {
       isAnonymous: false,
       lat: 8.5413,
@@ -254,7 +255,7 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 bg-gray-50 min-h-screen">
+    <div className="container mx-auto px-4 py-6 md:py-12 bg-gray-50 min-h-screen">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <div className="inline-flex p-5 bg-red-100 rounded-full mb-6">

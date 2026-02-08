@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Shield, Loader2, AlertCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { saveAuthData } from "@/lib/auth";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -121,12 +122,9 @@ export default function OfficerLoginPage() {
       }
 
       return response.json() as Promise<LoginResponse>;
-    },
     onSuccess: (data) => {
-      // Save to localStorage
-      localStorage.setItem("officerToken", data.token);
-      localStorage.setItem("officerAuth", "true");
-      localStorage.setItem("officerUser", JSON.stringify(data.user));
+      // Use shared helper to save auth data (includes embedding token in user)
+      saveAuthData(data.token, data.user);
 
       // Save to Cookie for middleware
       document.cookie = `userRole=${data.user.role}; path=/; max-age=86400; SameSite=Lax`;

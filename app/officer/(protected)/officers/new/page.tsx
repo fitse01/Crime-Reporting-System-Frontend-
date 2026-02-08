@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,13 +30,15 @@ import { toast } from "sonner";
 import { useState } from "react";
 
 const officerSchema = z.object({
-  fullName: z.string().min(3, "Full name is required"),
+  fullName: z.string().min(3, "Full name is required (min 3 chars)"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().min(10, "Valid phone number is required"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  badgeNumber: z.string().min(3, "Badge number is required"),
+  badgeNumber: z.string().min(3, "Badge number is required (min 3 chars)"),
   rank: z.string().min(2, "Rank is required"),
-  availability: z.string(),
+  availability: z.string().min(1, "Availability is required"),
+  stationId: z.string().min(1, "Station is required"),
+  role: z.string().min(1, "Role is required"),
   displayName: z.string().optional(),
   tagline: z.string().optional(),
   publicBio: z.string().optional(),
@@ -45,7 +47,6 @@ const officerSchema = z.object({
   maritalStatus: z.string().optional(),
   education: z.string().optional(),
   emergencyPhone: z.string().optional(),
-  role: z.string().default("OFFICER"),
 });
 
 type OfficerForm = z.infer<typeof officerSchema>;
@@ -73,6 +74,17 @@ export default function NewOfficerPage() {
   const gender = watch("gender");
   const maritalStatus = watch("maritalStatus");
   const role = watch("role");
+  const stationId = watch("stationId");
+
+  const { data: locationsData } = useQuery({
+    queryKey: ["locations"],
+    queryFn: async () => {
+      const res = await fetch("http://localhost:4000/api/blog/locations");
+      if (!res.ok) throw new Error("Failed to fetch locations");
+      const data = await res.json();
+      return data.locations as { id: number; city: string; subCity?: string }[];
+    },
+  });
 
   // --- Logic Fix: Authentication and FormData Posting ---
   const createOfficerMutation = useMutation({
@@ -82,7 +94,7 @@ export default function NewOfficerPage() {
       // 1. Properly append data (avoiding 'undefined' strings)
       Object.entries(data).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
-          formData.append(key, value);
+          formData.append(key, value.toString());
         }
       });
 
@@ -244,13 +256,36 @@ export default function NewOfficerPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="availability">Availability</Label>
+                <Label htmlFor="stationId">Station (Location) *</Label>
+                <Select
+                  value={stationId}
+                  onValueChange={(value) => setValue("stationId", value)}
+                >
+                  <SelectTrigger id="stationId">
+                    <SelectValue placeholder="Select station" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(locationsData || []).map((loc) => (
+                      <SelectItem key={loc.id} value={loc.id.toString()}>
+                        {loc.city} {loc.subCity ? `- ${loc.subCity}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.stationId && (
+                  <p className="text-sm text-destructive">
+                    {errors.stationId.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="availability">Availability *</Label>
                 <Select
                   value={availability}
                   onValueChange={(value) => setValue("availability", value)}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger id="availability">
+                    <SelectValue placeholder="Select availability" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ON_DUTY">On Duty</SelectItem>
@@ -259,15 +294,20 @@ export default function NewOfficerPage() {
                     <SelectItem value="BUSY">Busy</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.availability && (
+                  <p className="text-sm text-destructive">
+                    {errors.availability.message}
+                  </p>
+                )}
               </div>
 
                <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
+                <Label htmlFor="role">Role *</Label>
                 <Select
                   value={role}
                   onValueChange={(value) => setValue("role", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="role">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -276,6 +316,11 @@ export default function NewOfficerPage() {
                     <SelectItem value="ADMIN">Admin</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.role && (
+                  <p className="text-sm text-destructive">
+                    {errors.role.message}
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>

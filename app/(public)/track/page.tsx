@@ -56,7 +56,7 @@ export default function TrackPage() {
       if (!searchedCaseNumber) return null;
 
       const response = await fetch(
-        `http://localhost:4000/api/reports?caseNumber=${searchedCaseNumber}`
+        `http://localhost:4000/api/reports/public/track/${searchedCaseNumber}`
       );
 
       if (!response.ok) {
@@ -64,16 +64,7 @@ export default function TrackPage() {
       }
 
       const result = await response.json();
-      // Backend returns array of reports, filter by case number
-      const report = result.reports?.find(
-        (r: Report) => r.caseNumber === searchedCaseNumber
-      );
-
-      if (!report) {
-        throw new Error("Report not found");
-      }
-
-      return report as Report;
+      return result.report as Report;
     },
     enabled: searchedCaseNumber.length > 0,
   });
